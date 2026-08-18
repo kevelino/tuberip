@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+# build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "tuberip"
+version = "0.1.0"
+description = "Linux YouTube downloader app"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "TubeRip Contributors"}
+]
+dependencies = [
+    "PySide6>=6.6",
+    "yt-dlp>=2024.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+tuberip = "tuberip.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

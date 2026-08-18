@@ -1,0 +1,51 @@
+QMainWindow {
+    background-color: #f5f5f5;
+}
+
+QPushButton {
+    padding: 6px 14px;
+    border-radius: 4px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+}
+
+QPushButton:hover {
+    background-color: #2563eb;
+}
+
+QPushButton:checked {
+    background-color: #1d4ed8;
+}
+
+QLineEdit, QComboBox, QSpinBox {
+    padding: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background-color: white;
+}
+
+QListWidget {
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    background-color: white;
+}
+
+QProgressBar {
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    text-align: center;
+}
+
+QGroupBox {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+}
