@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class Mode(str, Enum):
@@ -15,11 +16,14 @@ class DownloadConfig:
     quality: str = "480"
     audio_format: str = "mp3"
     audio_quality: str = "0"
-    subtitle_lang: str = "fr,en"
+    subtitle_lang: str = "en,fr"
     download_subtitles: bool = False
+    embed_thumbnail: bool = True
+    embed_metadata: bool = True
+    rate_limit: str = ""
     output_dir: str = field(
-        default_factory=lambda: (
-            os.path.join(os.path.expanduser("~"), "Downloads", "YouTube")
+        default_factory=lambda: os.path.join(
+            os.path.expanduser("~"), "Downloads", "YouTube"
         )
     )
 
@@ -30,5 +34,5 @@ class DownloadItem:
     title: str = ""
     status: str = "pending"
     progress: float = 0.0
-    error: Optional[str] = None
-    config: Optional[DownloadConfig] = None
+    error: str | None = None
+    config: DownloadConfig | None = None

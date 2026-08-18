@@ -2,8 +2,8 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication
 
 from .ui.main_window import MainWindow
 
@@ -16,7 +16,7 @@ def _resource_path(relative: str) -> str:
 
 
 def _load_styles(app: QApplication) -> None:
-    style_path = _resource_path(os.path.join("tuberip", "ui", "styles.qss"))
+    style_path = _resource_path(os.path.join("ui", "styles.qss"))
     if os.path.exists(style_path):
         with open(style_path, "r", encoding="utf-8") as fh:
             app.setStyleSheet(fh.read())
