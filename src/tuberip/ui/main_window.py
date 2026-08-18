@@ -1,10 +1,8 @@
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QProgressBar, QListWidget, QListWidgetItem, QMessageBox, QSplitter,
-    QLabel,
+    QListWidget, QListWidgetItem, QMessageBox, QLabel,
 )
 from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QColor
 
 from ..backend.models import DownloadItem, Mode, DownloadConfig
 from ..backend.downloader import DependencyError, Downloader
@@ -12,6 +10,7 @@ from .widgets import (
     URLInput, ModeSelector, QualityCombo, AudioSettings,
     OutputFolder, SubtitlesGroup,
 )
+from .download_item_widget import DownloadItemWidget
 
 
 class DownloadWorker(QThread):
@@ -25,7 +24,11 @@ class DownloadWorker(QThread):
         self.item = item
 
     def run(self) -> None:
-        self.downloader.download(self.item)
+        self.downloader.download(
+            self.item,
+            on_progress=lambda p: self.progress.emit(p),
+            on_status=lambda s: self.status_changed.emit(s),
+        )
         self.finished.emit()
 
 
@@ -37,6 +40,7 @@ class MainWindow(QMainWindow):
 
         self.items: list[DownloadItem] = []
         self.workers: list[DownloadWorker] = []
+        self.widgets: list[DownloadItemWidget] = []
 
         central = QWidget()
         self.setCentralWidget(central)
@@ -115,11 +119,17 @@ class MainWindow(QMainWindow):
         item = DownloadItem(url=url, config=config)
         self.items.append(item)
 
-        list_item = QListWidgetItem(f"{url} — {mode.value} — En attente")
-        list_item.setData(Qt.UserRole, len(self.items) - 1)
-        self.queue_list.addItem(list_item)
+        widget = DownloadItemWidget()
+        widget.set_info(f"{url} — {mode.value}")
+        widget.set_status("En attente")
+        widget.set_progress(0.0)
 
-        self._update_item_display(len(self.items) - 1)
+        list_item = QListWidgetItem()
+        list_item.setSizeHint(widget.sizeHint())
+        self.queue_list.addItem(list_item)
+        self.queue_list.setItemWidget(list_item, widget)
+
+        self.widgets.append(widget)
 
         worker = DownloadWorker(Downloader(config), item)
         worker.progress.connect(self._on_progress)
@@ -134,7 +144,8 @@ class MainWindow(QMainWindow):
             return
         idx = self.workers.index(sender)
         self.items[idx].progress = value
-        self._update_item_display(idx)
+        if idx < len(self.widgets):
+            self.widgets[idx].set_progress(value)
 
     def _on_status_changed(self, status: str) -> None:
         sender = self.sender()
@@ -142,20 +153,24 @@ class MainWindow(QMainWindow):
             return
         idx = self.workers.index(sender)
         self.items[idx].status = status
-        self._update_item_display(idx)
+        if idx < len(self.widgets):
+            widget = self.widgets[idx]
+            if status == "error" and self.items[idx].error:
+                widget.set_error(self.items[idx].error)
+            elif status == "done":
+                widget.set_status("Terminé")
+                widget.set_progress(100.0)
+            elif status == "downloading":
+                widget.set_status("Téléchargement...")
+            else:
+                widget.set_status(status)
 
     def _on_finished(self, idx: int) -> None:
-        self._update_item_display(idx)
-
-    def _update_item_display(self, idx: int) -> None:
-        item = self.items[idx]
-        list_item = self.queue_list.item(idx)
-        if list_item is None:
-            return
-        status_label = {
-            "pending": "En attente",
-            "downloading": f"Téléchargement {item.progress:.0f}%",
-            "done": "Terminé",
-            "error": f"Erreur: {item.error or 'inconnue'}",
-        }.get(item.status, item.status)
-        list_item.setText(f"{item.url} — {item.config.mode.value if item.config else ''} — {status_label}")
+        if idx < len(self.widgets):
+            widget = self.widgets[idx]
+            item = self.items[idx]
+            if item.status == "done":
+                widget.set_status("Terminé")
+                widget.set_progress(100.0)
+            elif item.status == "error":
+                widget.set_error(item.error or "Erreur inconnue")

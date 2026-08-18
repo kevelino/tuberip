@@ -107,7 +107,12 @@ class Downloader:
         command.append(url)
         return command
 
-    def download(self, item: DownloadItem) -> None:
+    def download(
+        self,
+        item: DownloadItem,
+        on_progress=None,
+        on_status=None,
+    ) -> None:
         self.check_dependencies()
 
         url = self.build_url(item.url)
@@ -116,6 +121,9 @@ class Downloader:
         item.status = "downloading"
         item.progress = 0.0
         item.error = None
+
+        if on_status:
+            on_status("downloading")
 
         command = self.build_command(url)
 
@@ -134,6 +142,8 @@ class Downloader:
                     try:
                         percent_str = line.split("%")[0].split()[-1]
                         item.progress = float(percent_str)
+                        if on_progress:
+                            on_progress(item.progress)
                     except (IndexError, ValueError):
                         pass
 
@@ -142,13 +152,23 @@ class Downloader:
             if process.returncode == 0:
                 item.status = "done"
                 item.progress = 100.0
+                if on_progress:
+                    on_progress(100.0)
+                if on_status:
+                    on_status("done")
             else:
                 item.status = "error"
                 item.error = f"yt-dlp exited with code {process.returncode}"
+                if on_status:
+                    on_status("error")
 
         except FileNotFoundError as exc:
             item.status = "error"
             item.error = f"Command not found: {exc}"
+            if on_status:
+                on_status("error")
         except Exception as exc:
             item.status = "error"
             item.error = str(exc)
+            if on_status:
+                on_status("error")
