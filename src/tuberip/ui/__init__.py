@@ -1,21 +1,22 @@
 from .download_item_widget import DownloadItemWidget
 from .main_window import MainWindow
 from .widgets import (
-    AudioSettings,
-    ModeSelector,
-    OutputFolder,
-    QualityCombo,
-    SubtitlesGroup,
+    FormatSelector,
+    HelpDialog,
+    QualitySelector,
+    SaveToRow,
+    SettingsDialog,
     URLInput,
 )
 
 __all__ = [
-    "AudioSettings",
     "DownloadItemWidget",
+    "FormatSelector",
+    "HelpDialog",
     "MainWindow",
-    "ModeSelector",
-    "OutputFolder",
-    "QualityCombo",
-    "SubtitlesGroup",
+    "QualitySelector",
+    "SaveToRow",
+    "SettingsDialog",
     "URLInput",
 ]
+
