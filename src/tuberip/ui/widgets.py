@@ -1,10 +1,16 @@
-import os
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QComboBox, QCheckBox, QFileDialog, QGroupBox,
-    QSpinBox, QFormLayout,
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSpinBox,
+    QWidget,
 )
-from PySide6.QtCore import Qt
 
 
 class URLInput(QWidget):
@@ -57,6 +63,7 @@ class ModeSelector(QWidget):
         self.mode_changed.emit("audio")
 
     from PySide6.QtCore import Signal
+
     mode_changed = Signal(str)
 
     def current_mode(self) -> str:

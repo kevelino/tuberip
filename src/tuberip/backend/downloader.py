@@ -1,7 +1,6 @@
 import os
 import shutil
 import subprocess
-import sys
 from typing import List, Optional
 
 from .models import DownloadConfig, DownloadItem, Mode
@@ -27,8 +26,9 @@ class Downloader:
 
         if missing:
             raise DependencyError(
-                "Missing dependencies: " + ", ".join(missing) +
-                ". Install them and retry."
+                "Missing dependencies: "
+                + ", ".join(missing)
+                + ". Install them and retry."
             )
 
     @staticmethod
@@ -43,10 +43,7 @@ class Downloader:
 
         quality = self.config.quality
         if quality == "best":
-            return (
-                "bestvideo[ext=mp4]+bestaudio[ext=m4a]/"
-                "bestvideo+bestaudio/best"
-            )
+            return "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"
         return (
             f"bestvideo[height<={quality}][ext=mp4]+"
             f"bestaudio[ext=m4a]/"

@@ -1,4 +1,3 @@
-import sys
 from tuberip.app import main
 
 if __name__ == "__main__":

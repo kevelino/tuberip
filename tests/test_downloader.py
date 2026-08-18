@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-from tuberip.backend.models import DownloadConfig, DownloadItem, Mode
+import pytest
+
 from tuberip.backend.downloader import DependencyError, Downloader
+from tuberip.backend.models import DownloadConfig, DownloadItem, Mode
 
 
 def test_build_url_from_id():

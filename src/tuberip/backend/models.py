@@ -18,8 +18,8 @@ class DownloadConfig:
     subtitle_lang: str = "fr,en"
     download_subtitles: bool = False
     output_dir: str = field(
-        default_factory=lambda: (
-            os.path.join(os.path.expanduser("~"), "Downloads", "YouTube")
+        default_factory=lambda: os.path.join(
+            os.path.expanduser("~"), "Downloads", "YouTube"
         )
     )
 

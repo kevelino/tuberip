@@ -1,16 +1,27 @@
+from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QListWidget, QListWidgetItem, QMessageBox, QLabel,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, QThread, Signal
 
-from ..backend.models import DownloadItem, Mode, DownloadConfig
-from ..backend.downloader import DependencyError, Downloader
-from .widgets import (
-    URLInput, ModeSelector, QualityCombo, AudioSettings,
-    OutputFolder, SubtitlesGroup,
-)
+from ..backend.downloader import Downloader
+from ..backend.models import DownloadConfig, DownloadItem, Mode
 from .download_item_widget import DownloadItemWidget
+from .widgets import (
+    AudioSettings,
+    ModeSelector,
+    OutputFolder,
+    QualityCombo,
+    SubtitlesGroup,
+    URLInput,
+)
 
 
 class DownloadWorker(QThread):
@@ -51,11 +62,7 @@ class MainWindow(QMainWindow):
         self.mode_selector = ModeSelector()
         self.video_quality = QualityCombo()
         self.audio_settings = AudioSettings()
-        self.output_folder = OutputFolder(
-            default_path=(
-                DownloadConfig().output_dir
-            )
-        )
+        self.output_folder = OutputFolder(default_path=(DownloadConfig().output_dir))
         self.subtitles = SubtitlesGroup()
 
         form = QWidget()
