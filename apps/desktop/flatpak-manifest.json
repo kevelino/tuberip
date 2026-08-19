@@ -1,0 +1,43 @@
+{
+  "app-id": "org.tuberip.TubeRip",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "6.7",
+  "sdk": "org.kde.Sdk",
+  "command": "tuberip",
+  "finish-args": [
+    "--share=network",
+    "--filesystem=home",
+    "--socket=wayland",
+    "--socket=x11",
+    "--device=dri",
+    "--share=audio",
+    "--talk-name=org.freedesktop.portal.Desktop"
+  ],
+  "modules": [
+    {
+      "name": "yt-dlp",
+      "buildsystem": "simple",
+      "build-commands": [
+        "pip3 install --no-cache-dir yt-dlp",
+        "chmod +x /app/bin/yt-dlp"
+      ]
+    },
+    {
+      "name": "tuberip",
+      "buildsystem": "simple",
+      "build-commands": [
+        "flutter pub get",
+        "flutter build linux --release",
+        "install -Dm755 build/linux/x64/release/bundle/tuberip ${FLATPAK_DEST}/bin/tuberip",
+        "install -Dm644 tuberip.desktop ${FLATPAK_DEST}/share/applications/org.tuberip.TubeRip.desktop",
+        "install -Dm644 assets/icons/tuberip.svg ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/org.tuberip.TubeRip.svg"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "."
+        }
+      ]
+    }
+  ]
+}

@@ -5,9 +5,7 @@ export function Footer() {
     <footer className="bg-zinc-950 border-t border-zinc-900 py-12 mt-20">
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center space-x-3">
-          <span className="w-6 h-6 rounded bg-gradient-to-tr from-primary-600 to-red-600 flex items-center justify-center font-mono font-bold text-xs text-white">
-            TR
-          </span>
+          <img className='w-8 h-8 flex items-center justify-center shadow-md' src='/tuberip.svg'/>
           <span className="text-sm font-bold font-mono tracking-wider text-white">
             Tube<span className="text-primary-400">Rip</span>
           </span>

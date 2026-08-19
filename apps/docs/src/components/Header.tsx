@@ -53,13 +53,6 @@ export function Header({ darkMode, setDarkMode }: HeaderProps) {
           >
             <MessageSquare className="w-5 h-5" />
           </a>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-primary-500"
-            aria-label="Toggle dark mode"
-          >
-            {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-zinc-300" />}
-          </button>
         </div>
       </nav>
     </header>
