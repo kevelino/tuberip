@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../backend/models.dart';
-import '../core/constants.dart';
-import '../services/binary_manager.dart';
-import '../services/download_manager.dart';
-import '../services/settings_service.dart';
+import '../../backend/models.dart';
+import '../../core/constants.dart';
+import '../../services/binary_manager.dart';
+import '../../services/download_manager.dart';
+import '../../services/settings_service.dart';
 import 'dialogs/help_dialog.dart';
 import 'dialogs/settings_dialog.dart';
 import 'widgets/download_list_item.dart';
