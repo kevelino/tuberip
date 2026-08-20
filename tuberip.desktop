@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=TubeRip
+Comment=Download YouTube videos and audio
+Exec=tuberip
+Icon=org.tuberip.TubeRip
+Terminal=false
+Type=Application
+Categories=Network;Video;Audio;
+Keywords=youtube;download;video;audio;
+StartupNotify=true

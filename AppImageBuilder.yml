@@ -1,0 +1,24 @@
+version: 1
+
+AppDir:
+  path: ./dist/tuberip
+  app_info:
+    name: tuberip
+    icon: ../assets/tuberip.svg
+    exec: tuberip
+    version: "1.0.0"
+
+AppImage:
+  arch: x86_64
+  name: tuberip
+  version: "1.0.0"
+  display_name: TubeRip
+  icon: ../assets/tuberip.svg
+  description:
+    summary: Download YouTube videos and audio
+    contact: https://discord.com/invite/tuberip
+    website: https://tuberip.keveli.no
+    developer: kevelino
+    category: Utility
+  runtime:
+    version: latest
