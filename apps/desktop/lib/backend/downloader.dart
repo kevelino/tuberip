@@ -125,7 +125,6 @@ class Downloader {
       final result = await Process.run(
         ytDlpPath,
         ['--dump-json', '--no-warnings', fullUrl],
-        stdoutError: true,
       );
       if (result.exitCode == 0 && result.stdout.toString().trim().isNotEmpty) {
         final lines = result.stdout.toString().trim().split('\n');
@@ -167,7 +166,6 @@ class Downloader {
       _process = await Process.start(
         cmd.first,
         cmd.sublist(1),
-        stdoutError: true,
         runInShell: false,
       );
 
@@ -199,6 +197,18 @@ class Downloader {
         }
       });
 
+      // Continuously drain stderr and retain the latest meaningful output
+      String? latestStderr;
+      _process!.stderr
+          .transform(const Utf8Decoder())
+          .transform(const LineSplitter())
+          .listen((line) {
+        final trimmed = line.trim();
+        if (trimmed.isNotEmpty) {
+          latestStderr = trimmed;
+        }
+      });
+
       // Wait for process to complete
       final exitCode = await _process!.exitCode;
       _process = null;
@@ -218,7 +228,8 @@ class Downloader {
         onStatus?.call('done');
       } else {
         item.status = 'error';
-        item.error = 'yt-dlp exited with code $exitCode';
+        item.error = 'yt-dlp exited with code $exitCode'
+            '${latestStderr != null ? ": $latestStderr" : ""}';
         onStatus?.call('error');
       }
     } on ProcessException catch (e) {

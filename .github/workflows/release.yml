@@ -159,4 +159,4 @@ jobs:
             artifacts/tuberip-flatpak/tuberip.flatpak
             artifacts/tuberip-flutter-flatpak/tuberip-flutter.flatpak
             artifacts/tuberip-appimage/tuberip-*.AppImage
-        tag_name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}

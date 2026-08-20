@@ -30,10 +30,11 @@ class OutputSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayPath = AppUtils.expandPath(outputDir);
-    final isHovered = true;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
+      onEnter: (_) {},
+      onExit: (_) {},
       child: GestureDetector(
         onTap: () => _pickFolder(context),
         child: Container(
@@ -51,7 +52,7 @@ class OutputSelector extends StatelessWidget {
               Icon(
                 Icons.folder_outlined,
                 size: compact ? 12 : 14,
-                color: isHovered ? AppColors.cyan : AppColors.textSecondary,
+                color: AppColors.cyan,
               ),
               if (!compact) ...[
                 const SizedBox(width: 8),
@@ -70,9 +71,7 @@ class OutputSelector extends StatelessWidget {
                 child: Text(
                   displayPath,
                   style: TextStyle(
-                    color: isHovered
-                        ? AppColors.cyan
-                        : AppColors.textSecondary,
+                    color: AppColors.textSecondary,
                     fontSize: compact ? 11 : 12,
                     fontFamily: 'Inter',
                     overflow: TextOverflow.ellipsis,
@@ -83,7 +82,7 @@ class OutputSelector extends StatelessWidget {
               if (!compact) ...[
                 const SizedBox(width: 4),
                 const Icon(
-                  Icons.open_in_folder_outlined,
+                  Icons.folder_open_outlined,
                   size: 12,
                   color: AppColors.cyan,
                 ),

@@ -10,7 +10,9 @@ class TubeRipApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'TubeRip',
-      theme: AppTheme.dark,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );

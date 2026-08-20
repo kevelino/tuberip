@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants.dart';
 
-class SettingsDialog extends StatelessWidget {
+class SettingsDialog extends StatefulWidget {
   final Map<String, dynamic> settings;
   final void Function(Map<String, dynamic> updated) onApply;
 
@@ -13,9 +13,36 @@ class SettingsDialog extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final localSettings = Map<String, dynamic>.of(settings);
+  State<SettingsDialog> createState() => _SettingsDialogState();
+}
 
+class _SettingsDialogState extends State<SettingsDialog> {
+  late final Map<String, dynamic> _localSettings;
+  final Map<String, TextEditingController> _controllers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _localSettings = Map<String, dynamic>.of(widget.settings);
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  TextEditingController _getController(String key, String initialValue) {
+    if (!_controllers.containsKey(key)) {
+      _controllers[key] = TextEditingController(text: initialValue);
+    }
+    return _controllers[key]!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
@@ -48,31 +75,18 @@ class SettingsDialog extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _buildSection(AppStrings.metadataTitle, [
-                _buildSwitch(
-                  'embedThumbnail',
-                  'Embed video thumbnail',
-                  'Adds cover art to audio/video files',
-                  localSettings,
-                ),
-                _buildSwitch(
-                  'embedMetadata',
-                  'Embed metadata',
-                  'Writes title/artist info into file tags',
-                  localSettings,
-                ),
+                _buildSwitch('embedThumbnail', 'Embed video thumbnail',
+                    'Adds cover art to audio/video files'),
+                _buildSwitch('embedMetadata', 'Embed metadata',
+                    'Writes title/artist info into file tags'),
               ]),
               _buildSection(AppStrings.subtitlesTitle, [
-                _buildSwitch(
-                  'downloadSubtitles',
-                  'Download subtitles',
-                  'Fetches .srt subtitle files',
-                  localSettings,
-                ),
+                _buildSwitch('downloadSubtitles', 'Download subtitles',
+                    'Fetches .srt subtitle files'),
                 _buildTextField(
                   'subtitleLang',
                   'Subtitle languages',
                   'Comma-separated language codes (e.g. en,es,fr)',
-                  localSettings,
                 ),
               ]),
               _buildSection(AppStrings.audioQualityTitle, [
@@ -80,7 +94,6 @@ class SettingsDialog extends StatelessWidget {
                   'audioQuality',
                   'VBR quality',
                   '0 (best) to 9 (smallest) for VBR encoding',
-                  localSettings,
                 ),
               ]),
               _buildSection(AppStrings.networkTitle, [
@@ -88,7 +101,6 @@ class SettingsDialog extends StatelessWidget {
                   'rateLimit',
                   'Rate limit',
                   'Max download speed (e.g. 500K, 2M). Leave empty for no limit.',
-                  localSettings,
                 ),
               ]),
             ],
@@ -105,7 +117,7 @@ class SettingsDialog extends StatelessWidget {
         ),
         TextButton(
           onPressed: () {
-            onApply(localSettings);
+            widget.onApply(_localSettings);
             Navigator.of(context).pop();
           },
           child: Container(
@@ -153,7 +165,6 @@ class SettingsDialog extends StatelessWidget {
     String key,
     String label,
     String description,
-    Map<String, dynamic> settings,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,10 +182,13 @@ class SettingsDialog extends StatelessWidget {
               ),
             ),
             Switch(
-              value: settings[key] as bool? ?? false,
-              onChanged: (v) => settings[key] = v,
-              activeColor: AppColors.cyan,
-              activeTrackColor: AppColors.cyanDim,
+              value: _localSettings[key] as bool? ?? false,
+              onChanged: (v) {
+                setState(() {
+                  _localSettings[key] = v;
+                });
+              },
+              activeThumbColor: AppColors.cyan,
               inactiveThumbColor: AppColors.textMuted,
               inactiveTrackColor: AppColors.border,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -198,11 +212,10 @@ class SettingsDialog extends StatelessWidget {
     String key,
     String label,
     String hint,
-    Map<String, dynamic> settings,
   ) {
-    final controller = TextEditingController(
-      text: settings[key]?.toString() ?? '',
-    );
+    final initialValue = _localSettings[key]?.toString() ?? '';
+    final controller = _getController(key, initialValue);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -243,7 +256,9 @@ class SettingsDialog extends StatelessWidget {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           ),
-          onChanged: (v) => settings[key] = v,
+          onChanged: (v) {
+            _localSettings[key] = v;
+          },
         ),
         const SizedBox(height: 8),
       ],

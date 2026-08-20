@@ -17,7 +17,7 @@ AppImage:
   description:
     summary: Download YouTube videos and audio
     contact: https://discord.com/invite/tuberip
-    website: https://tuberip.keveli.no
+    website: https://tuberip.vercel.app
     developer: kevelino
     category: Utility
   runtime:

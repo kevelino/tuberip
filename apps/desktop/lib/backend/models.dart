@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-
 enum Mode { video, audio }
 
 class DownloadConfig {
@@ -99,6 +97,13 @@ class DownloadItem {
   String? error;
   DownloadConfig? config;
 
+  /// Combined "speed • ETA" string from yt-dlp progress output, e.g.
+  /// "8.5 MB/s • ETA 0:45". Populated only while downloading.
+  String? speed;
+
+  /// When the item was created; used to show a relative timestamp.
+  final DateTime createdAt;
+
   DownloadItem({
     required this.url,
     this.title = '',
@@ -106,5 +111,7 @@ class DownloadItem {
     this.progress = 0.0,
     this.error,
     this.config,
-  });
+    this.speed,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 }

@@ -53,4 +53,15 @@ class AppUtils {
     }
     return '';
   }
+
+  /// Human-friendly relative time, e.g. "just now", "5 min ago", "Yesterday".
+  static String relativeTime(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inSeconds < 45) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    return '${date.day}/${date.month}/${date.year}';
+  }
 }

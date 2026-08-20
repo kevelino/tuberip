@@ -27,21 +27,21 @@
     <keyword>audio</keyword>
     <keyword>extractor</keyword>
   </keywords>
-  <url type="homepage">https://tuberip.keveli.no</url>
+  <url type="homepage">https://tuberip.vercel.app</url>
   <url type="help">https://discord.com/invite/tuberip</url>
-  <icon type="remote">https://tuberip.keveli.no/tuberip.svg</icon>
+  <icon type="remote">https://tuberip.vercel.app/tuberip.svg</icon>
   <launchable type="desktop-id">org.tuberip.TubeRip.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image width="1280" height="720">https://tuberip.keveli.no/screenshot-1.png</image>
+      <image width="1280" height="720">https://tuberip.vercel.app/screenshot-1.png</image>
       <caption>Main window with URL input, format selector, and download queue</caption>
     </screenshot>
     <screenshot>
-      <image width="1280" height="720">https://tuberip.keveli.no/screenshot-2.png</image>
+      <image width="1280" height="720">https://tuberip.vercel.app/screenshot-2.png</image>
       <caption>Live download progress with pause and cancel controls</caption>
     </screenshot>
     <screenshot>
-      <image width="1280" height="720">https://tuberip.keveli.no/screenshot-3.png</image>
+      <image width="1280" height="720">https://tuberip.vercel.app/screenshot-3.png</image>
       <caption>Advanced settings for subtitles, metadata, and rate limiting</caption>
     </screenshot>
   </screenshots>

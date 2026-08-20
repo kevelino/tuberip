@@ -28,7 +28,13 @@
       "build-commands": [
         "flutter pub get",
         "flutter build linux --release",
-        "install -Dm755 build/linux/x64/release/bundle/tuberip ${FLATPAK_DEST}/bin/tuberip",
+        "mkdir -p ${FLATPAK_DEST}/lib/tuberip",
+        "cp -a build/linux/x64/release/bundle/. ${FLATPAK_DEST}/lib/tuberip/",
+        "chmod +x ${FLATPAK_DEST}/lib/tuberip/tuberip",
+        "mkdir -p ${FLATPAK_DEST}/bin",
+        "echo '#!/bin/sh' > ${FLATPAK_DEST}/bin/tuberip",
+        "echo 'exec /app/lib/tuberip/tuberip \"$@\"' >> ${FLATPAK_DEST}/bin/tuberip",
+        "chmod +x ${FLATPAK_DEST}/bin/tuberip",
         "install -Dm644 tuberip.desktop ${FLATPAK_DEST}/share/applications/org.tuberip.TubeRip.desktop",
         "install -Dm644 assets/icons/tuberip.svg ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/org.tuberip.TubeRip.svg"
       ],

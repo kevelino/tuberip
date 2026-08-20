@@ -17,9 +17,10 @@ class DownloadManager extends ChangeNotifier {
   DownloadManager(this.settingsService);
 
   Future<void> initialize() async {
+    final ffmpegPath = BinaryManager.ffmpegPath;
     await Downloader.checkDependencies(
       await BinaryManager.ytDlpPath,
-      BinaryManager.ffmpegPath,
+      ffmpegPath ?? '',
     );
   }
 
@@ -46,10 +47,15 @@ class DownloadManager extends ChangeNotifier {
       },
       onStatus: (s) {
         item.status = s;
+        if (s != 'downloading') item.speed = null;
         notifyListeners();
         if (s == 'done' || s == 'error' || s == 'cancelled') {
           _activeDownloaders.remove(item.url);
         }
+      },
+      onSpeed: (s) {
+        item.speed = s;
+        notifyListeners();
       },
     );
 
@@ -100,7 +106,7 @@ class DownloadManager extends ChangeNotifier {
     notifyListeners();
     try {
       Downloader.ytDlpPath = await BinaryManager.ytDlpPath;
-      Downloader.ffmpegPath = BinaryManager.ffmpegPath;
+      Downloader.ffmpegPath = BinaryManager.ffmpegPath ?? '';
 
       final downloader = Downloader(settingsService.buildConfig(
         mode: Mode.video,
