@@ -1,127 +1,91 @@
 # TubeRip
 
-Cross-distro Linux desktop app for downloading YouTube videos or extracting audio. Built with PySide6 and `yt-dlp`.
+Linux-first desktop app for downloading YouTube videos or extracting audio.
+Built with **Flutter**, **yt-dlp**, and **ffmpeg**.
 
-## Screenshot
+## Download
 
-> Screenshot placeholder — add a screenshot once available.
+Grab the latest **AppImage** from [GitHub Releases](https://github.com/kevelino/tuberip/releases) (tags `v*`).
+
+```bash
+chmod +x TubeRip-*-x86_64.AppImage
+./TubeRip-*-x86_64.AppImage
+```
+
+yt-dlp and ffmpeg are bundled in the AppImage.
 
 ## Features
 
-- Video and audio download modes
-- Quality presets: `best`, `1080`, `720`, `480` for video; `mp3`, `m4a`, `best` for audio
-- Audio quality selection (VBR 0–9)
-- Optional subtitle download with language selection
-- Download queue with live status and progress
-- Dependency check on startup (`yt-dlp`, `ffmpeg`)
-- Output folder browser with default `~/Downloads/YouTube`
-- Qt stylesheet for consistent look across GNOME/KDE/XFCE
-- Threaded downloads via `QThread` to keep the UI responsive
-- PyInstaller packaging support for distribution as a single binary
+- Video (MP4) and audio (mp3 / m4a) modes
+- Quality presets: best, 1080, 720, 480
+- Sequential download queue with live progress, speed, and ETA
+- Pause / resume (Linux) and cancel
+- Browser cookies or cookies.txt
+- Optional subtitles, embed thumbnail & metadata
+- Persistent settings
+- Brand accent `#0FE5F4` from the TubeRip logo
 
-## Requirements
+## Requirements (development)
 
-- Python >= 3.9
-- PySide6 >= 6.6
-- yt-dlp >= 2024.1
-- ffmpeg
+- [Flutter](https://docs.flutter.dev/get-started/install/linux) 3.13+
+- yt-dlp and ffmpeg on `PATH` (or use the AppImage, which bundles them)
 
-## Development Setup
+```bash
+cd apps/desktop
+./scripts/install-deps.sh
+```
+
+## Development
 
 ```bash
 git clone https://github.com/kevelino/tuberip.git
-cd tuberip
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e '.[dev]'
+cd tuberip/apps/desktop
+flutter pub get
+flutter run -d linux
 ```
 
-## Project Structure
+## Project structure
 
 ```
 tuberip/
-├── src/tuberip/
-│   ├── __init__.py
-│   ├── app.py              # QApplication bootstrap, stylesheet, icon
-│   ├── main.py             # Entry point
-│   ├── backend/
-│   │   ├── __init__.py
-│   │   ├── models.py       # Mode enum, DownloadConfig, DownloadItem
-│   │   └── downloader.py   # yt-dlp command builder, subprocess runner
-│   └── ui/
-│       ├── __init__.py
-│       ├── main_window.py  # MainWindow, DownloadWorker (QThread)
-│       ├── widgets.py      # URLInput, ModeSelector, QualityCombo, etc.
-│       └── styles.qss      # Qt stylesheet
-├── tests/
-│   └── test_downloader.py  # Backend unit tests
-├── scripts/
-│   ├── build.sh
-│   └── build.spec
-├── pyproject.toml
+├── apps/desktop/          # Flutter Linux desktop app (source of truth)
+│   ├── lib/               # UI, services, yt-dlp command builder
+│   ├── scripts/           # install-deps.sh, build-appimage.sh
+│   ├── test/
+│   └── README.md
+├── .github/workflows/     # CI + AppImage release on tags v*
 └── README.md
-```
-
-## Running the App
-
-```bash
-PYTHONPATH=src python3 src/tuberip/main.py
 ```
 
 ## Testing
 
 ```bash
-PYTHONPATH=src pytest tests/
+cd apps/desktop
+flutter analyze
+flutter test
 ```
 
-## Building a Standalone Binary
+## Building
 
 ```bash
-pip install pyinstaller
-bash scripts/build.sh
+cd apps/desktop
+flutter build linux --release
+./scripts/build-appimage.sh
+# → dist/TubeRip-<version>-x86_64.AppImage
 ```
-
-The executable will be in `dist/`.
 
 ## Architecture
 
-### Backend
+Flutter spawns `yt-dlp` via `dart:io` `Process`. ffmpeg is invoked by yt-dlp for merge / audio extract. See [`apps/desktop/README.md`](apps/desktop/README.md).
 
-The backend is a thin wrapper around `yt-dlp`. It does not reimplement download logic. Key classes:
+## Migration note
 
-- `DownloadConfig`: user-selected options (mode, quality, output dir, subtitles)
-- `DownloadItem`: runtime state (URL, title, progress, status, error)
-- `Downloader`: builds the `yt-dlp` command and runs it in a subprocess, parsing stdout for progress
-
-### Frontend
-
-- `MainWindow` owns the UI state and spawns a `DownloadWorker` per download.
-- `DownloadWorker` is a `QThread` that calls `Downloader.download()` and emits `progress`, `status_changed`, and `finished` signals.
-- Widgets are kept small and reusable (`widgets.py`) to make future layout changes easy.
-
-### Threading Model
-
-Each download runs in its own `QThread`. The UI never blocks. Progress is parsed from `yt-dlp` stdout lines containing `[download]` and `%`.
-
-## Packaging
-
-- Development install: `pip install -e '.[dev]'`
-- Binary distribution: PyInstaller (`scripts/build.spec`)
-- Future target: Flatpak for distro-agnostic packaging
-
-## Roadmap
-
-- [ ] Playlist support
-- [ ] Download history persisted to disk
-- [ ] System tray integration
-- [ ] Flatpak package
-- [ ] Dark mode stylesheet
-- [ ] Internationalization (i18n)
+The former PySide6 / Python UI (`src/tuberip`) has been removed. Stack is Flutter-only. Historical notes: [`MIGRATION.md`](MIGRATION.md).
 
 ## Contributing
 
-See `CONTRIBUTING.md`.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## License
 
-MIT — see `LICENSE`.
+MIT — see [`LICENSE`](LICENSE).

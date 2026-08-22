@@ -1,30 +1,21 @@
-/// Status of a download, derived from [DownloadItem.status].
 enum DownloadStatus {
-  downloading,
-  completed,
+  pending,
   queued,
+  downloading,
   paused,
+  completed,
   error,
   cancelled,
 }
 
-extension DownloadStatusX on DownloadStatus {
-  static DownloadStatus fromString(String status) {
-    switch (status) {
-      case 'done':
-        return DownloadStatus.completed;
-      case 'downloading':
-        return DownloadStatus.downloading;
-      case 'paused':
-        return DownloadStatus.paused;
-      case 'pending':
-        return DownloadStatus.queued;
-      case 'error':
-        return DownloadStatus.error;
-      case 'cancelled':
-        return DownloadStatus.cancelled;
-      default:
-        return DownloadStatus.downloading;
-    }
-  }
+extension DownloadStatusLabel on DownloadStatus {
+  String get label => switch (this) {
+        DownloadStatus.pending => 'Pending',
+        DownloadStatus.queued => 'Queued',
+        DownloadStatus.downloading => 'Downloading',
+        DownloadStatus.paused => 'Paused',
+        DownloadStatus.completed => 'Completed',
+        DownloadStatus.error => 'Error',
+        DownloadStatus.cancelled => 'Cancelled',
+      };
 }

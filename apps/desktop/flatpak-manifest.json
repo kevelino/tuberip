@@ -1,49 +1,61 @@
+# TubeRip Flatpak (draft — post-MVP)
+
+```json
 {
-  "app-id": "org.tuberip.TubeRip",
-  "runtime": "org.kde.Platform",
-  "runtime-version": "6.7",
-  "sdk": "org.kde.Sdk",
-  "command": "tuberip",
+  "app-id": "com.tuberip.TubeRip",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "24.08",
+  "sdk": "org.freedesktop.Sdk",
+  "command": "desktop",
   "finish-args": [
     "--share=network",
-    "--filesystem=home",
+    "--share=ipc",
+    "--socket=fallback-x11",
     "--socket=wayland",
-    "--socket=x11",
     "--device=dri",
-    "--share=audio",
-    "--talk-name=org.freedesktop.portal.Desktop"
+    "--filesystem=xdg-download",
+    "--filesystem=xdg-config/firefox:ro",
+    "--filesystem=xdg-config/google-chrome:ro",
+    "--filesystem=xdg-config/chromium:ro"
   ],
   "modules": [
+    {
+      "name": "ffmpeg",
+      "buildsystem": "simple",
+      "build-commands": ["echo Use runtime ffmpeg or ship a module"],
+      "sources": []
+    },
     {
       "name": "yt-dlp",
       "buildsystem": "simple",
       "build-commands": [
-        "pip3 install --no-cache-dir yt-dlp",
-        "chmod +x /app/bin/yt-dlp"
+        "install -Dm755 yt-dlp /app/bin/yt-dlp"
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "url": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp",
+          "dest-filename": "yt-dlp"
+        }
       ]
     },
     {
       "name": "tuberip",
       "buildsystem": "simple",
       "build-commands": [
-        "flutter pub get",
-        "flutter build linux --release",
-        "mkdir -p ${FLATPAK_DEST}/lib/tuberip",
-        "cp -a build/linux/x64/release/bundle/. ${FLATPAK_DEST}/lib/tuberip/",
-        "chmod +x ${FLATPAK_DEST}/lib/tuberip/tuberip",
-        "mkdir -p ${FLATPAK_DEST}/bin",
-        "echo '#!/bin/sh' > ${FLATPAK_DEST}/bin/tuberip",
-        "echo 'exec /app/lib/tuberip/tuberip \"$@\"' >> ${FLATPAK_DEST}/bin/tuberip",
-        "chmod +x ${FLATPAK_DEST}/bin/tuberip",
-        "install -Dm644 tuberip.desktop ${FLATPAK_DEST}/share/applications/org.tuberip.TubeRip.desktop",
-        "install -Dm644 assets/icons/tuberip.svg ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/org.tuberip.TubeRip.svg"
+        "cp -r bundle/* /app/",
+        "install -Dm644 tuberip.desktop /app/share/applications/com.tuberip.TubeRip.desktop",
+        "install -Dm644 assets/icons/tuberip.svg /app/share/icons/hicolor/scalable/apps/tuberip.svg"
       ],
       "sources": [
         {
           "type": "dir",
-          "path": "."
+          "path": "build/linux/x64/release/bundle"
         }
       ]
     }
   ]
 }
+```
+
+Replace the ffmpeg placeholder with a real module or Freedesktop extension before Flathub submission.

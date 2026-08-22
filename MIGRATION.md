@@ -1,6 +1,9 @@
 # Flutter Migration Plan: PySide6 → Flutter Desktop
 
-## Current Architecture (Python/PySide6)
+> **Status (2026-08): complete.** The PySide6 / Python app (`src/tuberip`) has been removed.
+> The source of truth is [`apps/desktop/`](apps/desktop/). This document is kept as historical reference.
+
+## Former Architecture (Python/PySide6)
 
 - **`src/tuberip/`** — Main package with:
   - `app.py` — QApplication bootstrap
@@ -226,7 +229,7 @@ Retain the dark cyber-cyan theme (`#111113` background, `#11eef9` cyan accent) b
 | ⬜ Build AppImage |  |
 | ⬜ Build Flatpak |  |
 | ⬜ Update CI/CD workflows |  |
-| ⬜ Remove PySide6 codebase (keep as reference) |  |
+| ✅ Remove PySide6 codebase | Done — Flutter-only |
 
 ## Risks & Mitigations
 

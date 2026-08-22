@@ -37,7 +37,7 @@ export function Showcase() {
           {/* Screenshot Content */}
           <div className="relative aspect-video w-full bg-zinc-950">
             <img
-              src="/tuberip_gui_mockup.jpg"
+              src="/tuberip_mockup.jpg"
               alt="TubeRip User Interface"
               className="w-full h-full object-cover select-none pointer-events-none group-hover:scale-[1.01] transition-transform duration-700 ease-out"
             />

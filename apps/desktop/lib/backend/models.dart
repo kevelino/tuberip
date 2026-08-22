@@ -1,39 +1,50 @@
 import 'dart:io';
 
-enum Mode { video, audio }
+import 'package:path/path.dart' as p;
+
+import '../core/download_status.dart';
+
+enum DownloadMode { video, audio }
 
 class DownloadConfig {
-  final Mode mode;
-  final String quality;
-  final String audioFormat;
-  final String audioQuality;
-  final String subtitleLang;
-  final bool downloadSubtitles;
-  final bool embedThumbnail;
-  final bool embedMetadata;
-  final String rateLimit;
-  final String outputDir;
-
   DownloadConfig({
-    this.mode = Mode.video,
+    this.mode = DownloadMode.video,
     this.quality = '480',
     this.audioFormat = 'mp3',
     this.audioQuality = '0',
-    this.subtitleLang = 'en,fr',
+    this.subtitleLang = 'fr,en',
     this.downloadSubtitles = false,
     this.embedThumbnail = true,
     this.embedMetadata = true,
-    this.rateLimit = '',
+    this.cookieBrowser = 'firefox',
+    this.cookiesFile = '',
+    this.ytDlpPath = '',
+    this.ffmpegPath = '',
     String? outputDir,
-  }) : outputDir = outputDir ?? _defaultOutputDir();
+  }) : outputDir = outputDir ??
+            p.join(
+              Platform.environment['HOME'] ??
+                  Directory.systemTemp.path,
+              'Downloads',
+              'YouTube',
+            );
 
-  static String _defaultOutputDir() {
-    final home = Platform.environment['HOME'] ?? '';
-    return '$home/Downloads/YouTube';
-  }
+  DownloadMode mode;
+  String quality;
+  String audioFormat;
+  String audioQuality;
+  String subtitleLang;
+  bool downloadSubtitles;
+  bool embedThumbnail;
+  bool embedMetadata;
+  String cookieBrowser;
+  String cookiesFile;
+  String ytDlpPath;
+  String ffmpegPath;
+  String outputDir;
 
   DownloadConfig copyWith({
-    Mode? mode,
+    DownloadMode? mode,
     String? quality,
     String? audioFormat,
     String? audioQuality,
@@ -41,7 +52,10 @@ class DownloadConfig {
     bool? downloadSubtitles,
     bool? embedThumbnail,
     bool? embedMetadata,
-    String? rateLimit,
+    String? cookieBrowser,
+    String? cookiesFile,
+    String? ytDlpPath,
+    String? ffmpegPath,
     String? outputDir,
   }) {
     return DownloadConfig(
@@ -53,65 +67,41 @@ class DownloadConfig {
       downloadSubtitles: downloadSubtitles ?? this.downloadSubtitles,
       embedThumbnail: embedThumbnail ?? this.embedThumbnail,
       embedMetadata: embedMetadata ?? this.embedMetadata,
-      rateLimit: rateLimit ?? this.rateLimit,
+      cookieBrowser: cookieBrowser ?? this.cookieBrowser,
+      cookiesFile: cookiesFile ?? this.cookiesFile,
+      ytDlpPath: ytDlpPath ?? this.ytDlpPath,
+      ffmpegPath: ffmpegPath ?? this.ffmpegPath,
       outputDir: outputDir ?? this.outputDir,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'mode': mode.index,
-      'quality': quality,
-      'audioFormat': audioFormat,
-      'audioQuality': audioQuality,
-      'subtitleLang': subtitleLang,
-      'downloadSubtitles': downloadSubtitles,
-      'embedThumbnail': embedThumbnail,
-      'embedMetadata': embedMetadata,
-      'rateLimit': rateLimit,
-      'outputDir': outputDir,
-    };
-  }
-
-  factory DownloadConfig.fromMap(Map<String, dynamic> map) {
-    return DownloadConfig(
-      mode: Mode.values[map['mode'] as int? ?? 0],
-      quality: map['quality'] as String? ?? '480',
-      audioFormat: map['audioFormat'] as String? ?? 'mp3',
-      audioQuality: map['audioQuality'] as String? ?? '0',
-      subtitleLang: map['subtitleLang'] as String? ?? 'en,fr',
-      downloadSubtitles: map['downloadSubtitles'] as bool? ?? false,
-      embedThumbnail: map['embedThumbnail'] as bool? ?? true,
-      embedMetadata: map['embedMetadata'] as bool? ?? true,
-      rateLimit: map['rateLimit'] as String? ?? '',
-      outputDir: map['outputDir'] as String?,
     );
   }
 }
 
 class DownloadItem {
-  String url;
-  String title;
-  String status;
-  double progress;
-  String? error;
-  DownloadConfig? config;
-
-  /// Combined "speed • ETA" string from yt-dlp progress output, e.g.
-  /// "8.5 MB/s • ETA 0:45". Populated only while downloading.
-  String? speed;
-
-  /// When the item was created; used to show a relative timestamp.
-  final DateTime createdAt;
-
   DownloadItem({
+    required this.id,
     required this.url,
     this.title = '',
-    this.status = 'pending',
-    this.progress = 0.0,
+    this.status = DownloadStatus.queued,
+    this.progress = 0,
     this.error,
-    this.config,
     this.speed,
-    DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    this.eta,
+    this.fileSize,
+    this.thumbnailUrl,
+    this.duration,
+    DownloadConfig? config,
+  }) : config = config ?? DownloadConfig();
+
+  final String id;
+  String url;
+  String title;
+  DownloadStatus status;
+  double progress;
+  String? error;
+  String? speed;
+  String? eta;
+  String? fileSize;
+  String? thumbnailUrl;
+  String? duration;
+  DownloadConfig config;
 }

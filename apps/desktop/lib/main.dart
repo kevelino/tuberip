@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
 
 import 'app.dart';
+import 'services/binary_manager.dart';
+import 'services/download_manager.dart';
+import 'services/settings_service.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
 
-  WindowOptions windowOptions = WindowOptions(
-    size: const Size(860, 560),
-    center: true,
-    backgroundColor: Colors.black,
-    skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.hidden,
+  final settings = SettingsService();
+  await settings.init();
+  final config = await settings.loadConfig();
+
+  final binaryManager = BinaryManager(
+    customYtDlpPath: config.ytDlpPath,
+    customFfmpegPath: config.ffmpegPath,
   );
-  windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-    runApp(const TubeRipApp());
-  });
+  final downloadManager = DownloadManager(binaryManager: binaryManager)
+    ..config = config;
+
+  runApp(
+    TubeRipApp(
+      settings: settings,
+      downloadManager: downloadManager,
+    ),
+  );
 }

@@ -1,5 +1,7 @@
 # Flutter Migration Progress Tracker
 
+> **Status (2026-08): complete.** PySide6 codebase removed; stack is Flutter-only (`apps/desktop`).
+
 ## Phase 1: Project Setup & Dependencies
 - [x] Create Flutter project in `apps/desktop/` (via `flutter create`)
 - [x] Add pubspec dependencies (file_picker, shared_preferences, path_provider, window_manager)

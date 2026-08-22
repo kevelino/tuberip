@@ -1,50 +1,44 @@
 import 'package:flutter/material.dart';
 
 import '../../core/download_status.dart';
-import '../../core/theme_tokens.dart';
+import '../../core/theme.dart';
 
-/// Leading status indicator: filled dot (downloading), check (completed),
-/// outlined circle (queued), pause (paused), error/cancel icons.
 class StatusBadge extends StatelessWidget {
+  const StatusBadge({super.key, required this.status});
+
   final DownloadStatus status;
-  final Color? color;
-  final double size;
-
-  const StatusBadge({
-    super.key,
-    required this.status,
-    this.color,
-    this.size = 10,
-  });
-
-  Color _defaultColor(BuildContext context) {
-    final tokens = TubeRipTheme.of(context);
-    return tokens.statusColor(status);
-  }
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? _defaultColor(context);
-    switch (status) {
-      case DownloadStatus.downloading:
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: c,
-            shape: BoxShape.circle,
+    final tokens = Theme.of(context).extension<TubeRipTheme>()!;
+    final (color, icon) = switch (status) {
+      DownloadStatus.downloading => (tokens.accent, Icons.downloading),
+      DownloadStatus.completed => (tokens.success, Icons.check_circle),
+      DownloadStatus.queued || DownloadStatus.pending => (
+          tokens.warning,
+          Icons.schedule
+        ),
+      DownloadStatus.paused => (tokens.warning, Icons.pause_circle),
+      DownloadStatus.error || DownloadStatus.cancelled => (
+          tokens.error,
+          Icons.error
+        ),
+    };
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text(
+          status.label,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
           ),
-        );
-      case DownloadStatus.completed:
-        return Icon(Icons.check_circle_outline, size: size + 4, color: c);
-      case DownloadStatus.queued:
-        return Icon(Icons.circle_outlined, size: size + 4, color: c);
-      case DownloadStatus.paused:
-        return Icon(Icons.pause_circle_outline, size: size + 4, color: c);
-      case DownloadStatus.error:
-        return Icon(Icons.error_outline, size: size + 4, color: c);
-      case DownloadStatus.cancelled:
-        return Icon(Icons.cancel_outlined, size: size + 4, color: c);
-    }
+        ),
+      ],
+    );
   }
 }

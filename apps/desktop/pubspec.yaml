@@ -1,28 +1,21 @@
-name: tuberip
-description: "Download YouTube videos and audio with a beautiful Linux desktop app."
+name: desktop
+description: TubeRip — YouTube downloader for Linux desktop.
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
   sdk: ^3.13.0
-  flutter: '>=3.22.0'
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-
-  # Native folder browser dialog
-  file_picker: ^8.0.0
-
-  # Settings persistence
-  shared_preferences: ^2.2.3
-
-  # Path / file system
+  flutter_svg: ^2.0.17
+  file_picker: ^8.3.7
+  shared_preferences: ^2.5.3
+  path: ^1.9.1
   path_provider: ^2.1.5
-
-  # Frameless window with custom title bar
-  window_manager: ^0.5.2
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -31,8 +24,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
   assets:
     - assets/icons/tuberip.svg
-
-  # Material Icons are included automatically with uses-material-design
