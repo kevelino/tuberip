@@ -1,30 +1,34 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:desktop/app.dart';
+import 'package:desktop/services/binary_manager.dart';
+import 'package:desktop/services/download_manager.dart';
+import 'package:desktop/services/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:desktop/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('TubeRip app shows header and CTA', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = SettingsService();
+    await settings.init();
+    final config = await settings.loadConfig();
+    final dm = DownloadManager(
+      binaryManager: BinaryManager(
+        customYtDlpPath: config.ytDlpPath,
+        customFfmpegPath: config.ffmpegPath,
+      ),
+    )..config = config;
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.binding.setSurfaceSize(const Size(1100, 800));
+    await tester.pumpWidget(
+      TubeRipApp(settings: settings, downloadManager: dm),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('TubeRip'), findsOneWidget);
+    expect(find.textContaining('Download'), findsWidgets);
+    expect(find.text('No downloads yet'), findsOneWidget);
   });
 }

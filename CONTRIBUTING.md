@@ -9,14 +9,16 @@ Be respectful and constructive. We are building this together.
 ## How to Contribute
 
 1. Fork the repo and clone your fork.
-2. Create a feature branch from `master`:
+2. Create a feature branch from `master` (or `main`):
    ```bash
    git checkout -b feat/my-new-feature
    ```
-3. Make your changes.
-4. Run the linter and tests:
+3. Make your changes under `apps/desktop/`.
+4. Run analyze and tests:
    ```bash
-   PYTHONPATH=src pytest tests/
+   cd apps/desktop
+   flutter analyze
+   flutter test
    ```
 5. Commit with a clear message:
    ```bash
@@ -28,20 +30,20 @@ Be respectful and constructive. We are building this together.
 
 ```bash
 git clone https://github.com/kevelino/tuberip.git
-cd tuberip
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e '.[dev]'
+cd tuberip/apps/desktop
+./scripts/install-deps.sh   # yt-dlp + ffmpeg if needed
+flutter pub get
+flutter run -d linux
 ```
 
 ## Code Style
 
-- Python 3.9+ syntax
-- 4 spaces, no tabs
-- Type hints on public functions and dataclasses
-- Keep UI code in `src/tuberip/ui/`, backend in `src/tuberip/backend/`
+- Dart / Flutter for the desktop app
+- Prefer small, focused widgets and services under `lib/`
+- Keep yt-dlp CLI construction in `lib/backend/`; process lifecycle in `lib/services/`
 - Do not add comments unless necessary
 - Follow existing naming conventions
+- Brand accent is cyan `#0FE5F4` only (no purple Material defaults)
 
 ## Commit Messages
 
@@ -56,8 +58,8 @@ Use Conventional Commits:
 
 ## Pull Request Checklist
 
-- [ ] `PYTHONPATH=src pytest tests/` passes
-- [ ] `python3 -m py_compile` passes on changed files
+- [ ] `flutter analyze` passes in `apps/desktop`
+- [ ] `flutter test` passes in `apps/desktop`
 - [ ] README or docs updated if behavior changed
 - [ ] `CHANGELOG.md` updated if applicable
 
@@ -65,7 +67,7 @@ Use Conventional Commits:
 
 Open an issue with:
 - OS and version
-- Python version
+- Flutter version (`flutter --version`)
 - Steps to reproduce
 - Expected vs actual behavior
 - Logs or terminal output if available

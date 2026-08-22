@@ -1,142 +1,87 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/constants.dart';
+import '../../core/theme.dart';
 
 class UrlInput extends StatefulWidget {
-  final TextEditingController controller;
-  final String hint;
-  final bool enabled;
-  final VoidCallback onSubmit;
-
   const UrlInput({
     super.key,
     required this.controller,
-    this.hint = AppStrings.pasteHint,
-    this.enabled = true,
-    required this.onSubmit,
+    this.onSubmit,
   });
+
+  final TextEditingController controller;
+  final VoidCallback? onSubmit;
 
   @override
   State<UrlInput> createState() => _UrlInputState();
 }
 
 class _UrlInputState extends State<UrlInput> {
-  late FocusNode _focusNode;
-  bool _isHovered = false;
+  final _focus = FocusNode();
 
   @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode();
-    widget.controller.addListener(_onControllerChanged);
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
   }
 
-  void _onControllerChanged() {
-    if (mounted) {
-      setState(() {});
+  Future<void> _paste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (text != null && text.isNotEmpty) {
+      widget.controller.text = text;
+      widget.controller.selection =
+          TextSelection.collapsed(offset: text.length);
     }
   }
 
   @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.text,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Focus(
-        focusNode: _focusNode,
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent &&
-              event.logicalKey == LogicalKeyboardKey.enter) {
-            widget.onSubmit();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: Container(
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppSizes.borderRadiusLg),
-            border: Border.all(
-              color: _isHovered || _focusNode.hasFocus
-                  ? AppColors.cyan
-                  : AppColors.border,
-              width: AppSizes.borderWidth,
-            ),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 14),
-              Icon(
-                Icons.link_outlined,
-                size: 16,
-                color: widget.enabled
-                    ? AppColors.cyanDim
-                    : AppColors.textMuted,
+    final tokens = Theme.of(context).extension<TubeRipTheme>()!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Paste YouTube Video URL or ID',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppColors.gray400,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  enabled: widget.enabled,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: widget.hint,
-                    hintStyle: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 13,
-                      fontFamily: 'Inter',
-                    ),
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 13,
-                    fontFamily: 'Inter',
-                  ),
-                  textAlignVertical: TextAlignVertical.center,
-                ),
-              ),
-              if (widget.controller.text.isNotEmpty)
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () {
-                      widget.controller.clear();
-                      setState(() {});
-                    },
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.cyanDim,
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.borderRadius),
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        size: 12,
-                        color: AppColors.background,
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(width: 8),
-            ],
-          ),
         ),
-      ),
+        SizedBox(height: tokens.spacingSm),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: widget.controller,
+                focusNode: _focus,
+                onSubmitted: (_) => widget.onSubmit?.call(),
+                decoration: InputDecoration(
+                  hintText: 'https://www.youtube.com/watch?v=…',
+                  suffixIcon: widget.controller.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Clear',
+                          onPressed: () {
+                            widget.controller.clear();
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.close, size: 18),
+                        ),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            SizedBox(width: tokens.spacingSm),
+            OutlinedButton.icon(
+              onPressed: _paste,
+              icon: const Icon(Icons.content_paste, size: 18),
+              label: const Text('Paste'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

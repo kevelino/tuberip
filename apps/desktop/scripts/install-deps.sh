@@ -1,39 +1,38 @@
 #!/usr/bin/env bash
+# Install TubeRip runtime dependencies (yt-dlp + ffmpeg) on Linux.
 set -euo pipefail
 
-# Install system dependencies for TubeRip
-# - yt-dlp: installed via pip (same approach as Flatpak manifest)
-# - ffmpeg: installed via system package manager
+echo "==> TubeRip dependency installer"
 
-echo "=== TubeRip Dependency Installer ==="
-echo ""
-
-# Check for yt-dlp
-if command -v yt-dlp &> /dev/null; then
-    echo "[OK] yt-dlp already installed: $(which yt-dlp)"
+if command -v ffmpeg >/dev/null 2>&1; then
+  echo "OK  ffmpeg: $(command -v ffmpeg)"
 else
-    echo "[..] Installing yt-dlp via pip3..."
-    pip3 install --user --break-system-packages -U yt-dlp 2>/dev/null || \
-    pip3 install --user -U yt-dlp
-    echo "[OK] yt-dlp installed to ~/.local/bin/"
-    echo "     Add ~/.local/bin to your PATH if not already there."
+  echo "Missing ffmpeg"
+  if command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y ffmpeg
+  elif command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update && sudo apt-get install -y ffmpeg
+  elif command -v pacman >/dev/null 2>&1; then
+    sudo pacman -S --noconfirm ffmpeg
+  else
+    echo "Install ffmpeg manually for your distro, then re-run."
+    exit 1
+  fi
 fi
 
-# Check for ffmpeg
-if command -v ffmpeg &> /dev/null; then
-    echo "[OK] ffmpeg already installed: $(which ffmpeg)"
+if command -v yt-dlp >/dev/null 2>&1; then
+  echo "OK  yt-dlp: $(yt-dlp --version 2>/dev/null | head -1)"
 else
-    echo "[..] Installing ffmpeg via apt..."
-    sudo apt-get update -qq
-    sudo apt-get install -y ffmpeg
-    echo "[OK] ffmpeg installed"
+  echo "Missing yt-dlp — installing via pipx or pip"
+  if command -v pipx >/dev/null 2>&1; then
+    pipx install yt-dlp
+  elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y yt-dlp || python3 -m pip install --user yt-dlp
+  else
+    python3 -m pip install --user yt-dlp
+  fi
 fi
 
-# Verify
 echo ""
-echo "=== Verification ==="
-yt-dlp --version 2>/dev/null && echo "[OK] yt-dlp works" || echo "[FAIL] yt-dlp"
-ffmpeg -version 2>/dev/null | head -1 && echo "[OK] ffmpeg works" || echo "[FAIL] ffmpeg"
-
-echo ""
-echo "Dependencies installed! You can now build and run TubeRip."
+echo "Done. Verify with:"
+echo "  yt-dlp --version && ffmpeg -version | head -1"

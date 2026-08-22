@@ -1,67 +1,103 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
+/// Locates yt-dlp and ffmpeg on the system (or custom / bundled paths).
 class BinaryManager {
-  static String? _ytDlpPath;
-  static String? _ffmpegPath;
+  BinaryManager({
+    this.customYtDlpPath = '',
+    this.customFfmpegPath = '',
+  });
 
-  static Future<String> get ytDlpPath async {
-    if (_ytDlpPath != null) return _ytDlpPath!;
-    _ytDlpPath = await _resolveBinary('yt-dlp');
-    return _ytDlpPath!;
+  String customYtDlpPath;
+  String customFfmpegPath;
+
+  String? ytDlpPath;
+  String? ffmpegPath;
+
+  Future<DependencyCheckResult> check() async {
+    ytDlpPath = await _resolve('yt-dlp', customYtDlpPath);
+    ffmpegPath = await _resolve('ffmpeg', customFfmpegPath);
+
+    final missing = <String>[];
+    if (ytDlpPath == null) missing.add('yt-dlp');
+    if (ffmpegPath == null) missing.add('ffmpeg');
+
+    return DependencyCheckResult(
+      ok: missing.isEmpty,
+      missing: missing,
+      ytDlpPath: ytDlpPath,
+      ffmpegPath: ffmpegPath,
+    );
   }
 
-  static String? get ffmpegPath => _ffmpegPath ??= _resolveSystemBinary('ffmpeg');
-
-  static Future<String> _resolveBinary(String name) async {
-    final systemPath = _resolveSystemBinary(name);
-    if (systemPath != null) return systemPath;
-
-    // Fall back to checking apt/pip managed locations
-    final aptPath = _checkAptPath(name);
-    if (aptPath != null) return aptPath;
-
-    // Last resort: ask user to install
-    throw Exception(
-        '$name not found on PATH. Run: pip3 install --user -U yt-dlp '
-        'and: sudo apt install ffmpeg');
+  /// Directories to search for AppImage / sidecar binaries.
+  List<String> _sidecarDirs() {
+    final dirs = <String>{};
+    final exe = Platform.resolvedExecutable;
+    final exeDir = p.dirname(exe);
+    dirs.add(exeDir);
+    // Flutter bundle: …/usr/bin/TubeRip/desktop → also check …/usr/bin
+    dirs.add(p.dirname(exeDir));
+    final appDir = Platform.environment['APPDIR'];
+    if (appDir != null && appDir.isNotEmpty) {
+      dirs.add(p.join(appDir, 'usr', 'bin'));
+    }
+    return dirs.toList();
   }
 
-  static String? _resolveSystemBinary(String name) {
+  Future<String?> _resolve(String name, String custom) async {
+    if (custom.isNotEmpty) {
+      final file = File(custom);
+      if (await file.exists()) return custom;
+    }
+
+    for (final dir in _sidecarDirs()) {
+      final candidate = File(p.join(dir, name));
+      if (await candidate.exists()) {
+        return candidate.path;
+      }
+    }
+
+    final which = await Process.run('which', [name]);
+    if (which.exitCode == 0) {
+      final path = which.stdout.toString().trim().split('\n').first;
+      if (path.isNotEmpty) return path;
+    }
+
     try {
-      final result = Process.runSync('which', [name]);
-      if (result.exitCode == 0) {
-        final path = result.stdout.toString().trim();
-        if (path.isNotEmpty) return path;
+      final probe = await Process.run(name, ['--version']);
+      if (probe.exitCode == 0 || probe.stdout.toString().isNotEmpty) {
+        return name;
       }
     } catch (_) {}
+
     return null;
   }
 
-  static String? _checkAptPath(String name) {
-    final candidates = [
-      '/usr/bin/$name',
-      '/usr/local/bin/$name',
-      '${Platform.environment["HOME"]}/.local/bin/$name',
-    ];
-    for (final path in candidates) {
-      final file = File(path);
-      if (file.existsSync()) {
-        return path;
-      }
+  /// Short install hints for common Linux distros.
+  static String installHint(List<String> missing) {
+    final parts = <String>[];
+    if (missing.contains('ffmpeg')) {
+      parts.add('ffmpeg: sudo dnf install ffmpeg  # or apt install ffmpeg');
     }
-    return null;
-  }
-
-  static Future<void> initialize() async {
-    // Verify both binaries are available on the system
-    _ytDlpPath = await _resolveBinary('yt-dlp');
-    _ffmpegPath = _resolveSystemBinary('ffmpeg') ?? _checkAptPath('ffmpeg');
-
-    if (_ffmpegPath == null) {
-      throw Exception('ffmpeg not found on PATH. Run: sudo apt install ffmpeg');
+    if (missing.contains('yt-dlp')) {
+      parts.add('yt-dlp: pipx install yt-dlp  # or sudo dnf install yt-dlp');
     }
+    return parts.join('\n');
   }
+}
+
+class DependencyCheckResult {
+  const DependencyCheckResult({
+    required this.ok,
+    required this.missing,
+    this.ytDlpPath,
+    this.ffmpegPath,
+  });
+
+  final bool ok;
+  final List<String> missing;
+  final String? ytDlpPath;
+  final String? ffmpegPath;
 }

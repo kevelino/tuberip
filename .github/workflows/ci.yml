@@ -7,30 +7,33 @@ on:
     branches: [master, main]
 
 jobs:
-  test:
+  flutter:
+    name: Flutter analyze & test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    defaults:
+      run:
+        working-directory: apps/desktop
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e '.[dev]'
-      - name: Lint
-        run: |
-          python -m py_compile src/tuberip/app.py
-          python -m py_compile src/tuberip/main.py
-          python -m py_compile src/tuberip/backend/models.py
-          python -m py_compile src/tuberip/backend/downloader.py
-          python -m py_compile src/tuberip/ui/widgets.py
-          python -m py_compile src/tuberip/ui/main_window.py
-          python -m py_compile src/tuberip/ui/download_item_widget.py
-      - name: Run tests
-        run: |
-          PYTHONPATH=src pytest tests/ -v
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

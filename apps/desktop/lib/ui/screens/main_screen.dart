@@ -1,471 +1,298 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../backend/models.dart';
-import '../../core/constants.dart';
 import '../../services/binary_manager.dart';
 import '../../services/download_manager.dart';
 import '../../services/settings_service.dart';
-import 'dialogs/help_dialog.dart';
-import 'dialogs/settings_dialog.dart';
-import 'widgets/download_list_item.dart';
-import 'widgets/mode_selector.dart';
-import 'widgets/output_selector.dart';
-import 'widgets/quality_selector.dart';
-import 'widgets/title_bar.dart';
-import 'widgets/url_input.dart';
+import '../dialogs/help_dialog.dart';
+import '../dialogs/settings_dialog.dart';
+import '../widgets/download_queue_item.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/format_selector.dart';
+import '../widgets/header_bar.dart';
+import '../widgets/url_input.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  const MainScreen({
+    super.key,
+    required this.downloadManager,
+    required this.settings,
+    required this.themeMode,
+    required this.onThemeChanged,
+  });
+
+  final DownloadManager downloadManager;
+  final SettingsService settings;
+  final String themeMode;
+  final ValueChanged<String> onThemeChanged;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  late TextEditingController _urlController;
-  late SettingsService _settingsService;
+  final _urlController = TextEditingController();
+  bool _checkingDeps = true;
+  String? _depWarning;
 
-  DownloadManager? _downloadManager;
-
-  Mode _mode = Mode.video;
-  String _quality = 'best';
-  String _audioFormat = 'mp3';
-  String _outputDir = '';
-  bool _isLoading = true;
-  String? _errorMessage;
-
-  final Map<String, dynamic> _settingsMap = {};
+  DownloadManager get dm => widget.downloadManager;
 
   @override
   void initState() {
     super.initState();
-    _urlController = TextEditingController();
-    _initServices();
-    RawKeyboard.instance.addListener(_handleKeyEvent);
+    dm.addListener(_onDm);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _boot());
+  }
+
+  Future<void> _boot() async {
+    final result = await dm.checkDependencies();
+    if (!mounted) return;
+    setState(() {
+      _checkingDeps = false;
+      if (!result.ok) {
+        _depWarning =
+            'Missing: ${result.missing.join(', ')}\n${BinaryManager.installHint(result.missing)}';
+      }
+    });
+  }
+
+  void _onDm() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    RawKeyboard.instance.removeListener(_handleKeyEvent);
-    _downloadManager?.removeListener(_onDownloadManagerChanged);
+    dm.removeListener(_onDm);
     _urlController.dispose();
     super.dispose();
   }
 
-  void _onDownloadManagerChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Future<void> _initServices() async {
-    try {
-      _settingsService = await SettingsService.create();
-      _settingsMap.addAll({
-        'audioQuality': _settingsService.audioQuality,
-        'subtitleLang': _settingsService.subtitleLang,
-        'downloadSubtitles': _settingsService.downloadSubtitles,
-        'embedThumbnail': _settingsService.embedThumbnail,
-        'embedMetadata': _settingsService.embedMetadata,
-        'rateLimit': _settingsService.rateLimit,
-      });
-      _outputDir = _settingsService.outputDir;
-
-      await BinaryManager.initialize();
-      Downloader.ytDlpPath = await BinaryManager.ytDlpPath;
-      Downloader.ffmpegPath = BinaryManager.ffmpegPath!;
-
-      _downloadManager = DownloadManager(_settingsService);
-      _downloadManager!.addListener(_onDownloadManagerChanged);
-      await _downloadManager!.initialize();
-
-      setState(() => _isLoading = false);
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  void _startDownload() {
+  Future<void> _startDownload() async {
     final url = _urlController.text.trim();
     if (url.isEmpty) return;
 
-    final config = _settingsService.buildConfig(
-      mode: _mode,
-      quality: _quality,
-      audioFormat: _audioFormat,
-      outputDir: _outputDir,
-    );
+    final deps = await dm.checkDependencies();
+    if (!deps.ok && mounted) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Dependencies missing'),
+          content: Text(
+            'Missing: ${deps.missing.join(', ')}\n\n'
+            '${BinaryManager.installHint(deps.missing)}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
-    _downloadManager!.startDownload(url: url, config: config);
+    await dm.enqueue(url);
     _urlController.clear();
-    setState(() {});
   }
 
-  void _openSettings() {
-    showDialog(
+  Future<void> _openSettings() async {
+    await showDialog<void>(
       context: context,
-      barrierColor: Colors.black54,
-      builder: (context) => SettingsDialog(
-        settings: Map<String, dynamic>.of(_settingsMap),
-        onApply: (updated) {
-          _settingsMap.addAll(updated);
-          _settingsService.saveMap(updated);
+      builder: (ctx) => SettingsDialog(
+        config: dm.config,
+        themeMode: widget.themeMode,
+        settings: widget.settings,
+        onSaved: (config, theme) {
+          dm.config = config;
+          widget.onThemeChanged(theme);
+          setState(() {});
         },
       ),
     );
   }
 
-  void _openHelp() {
-    showDialog(
+  Future<void> _openHelp() async {
+    await showDialog<void>(
       context: context,
-      barrierColor: Colors.black54,
-      builder: (context) => const HelpDialog(),
+      builder: (_) => const HelpDialog(),
     );
   }
 
-  void _handleKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.enter) {
-        _startDownload();
-      } else if (event.isControlPressed &&
-          event.logicalKey == LogicalKeyboardKey.keyS) {
-        _openSettings();
-      } else if (event.isControlPressed &&
-          event.logicalKey == LogicalKeyboardKey.slash) {
-        _openHelp();
-      }
+  Future<void> _openFolder(String path) async {
+    final uri = Uri.directory(path);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else if (Platform.isLinux) {
+      await Process.run('xdg-open', [path]);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-        body: Column(
-          children: [
-            const TitleBar(),
-            if (_isLoading)
-              const Expanded(
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.cyan,
-                    strokeWidth: 2,
-                  ),
-                ),
-              )
-            else if (_errorMessage != null)
-              _buildErrorState()
-            else
-              _buildMainContent(),
-          ],
-        ),
-      );
-    }
+    final config = dm.config;
+    final isAudio = config.mode == DownloadMode.audio;
 
-  Widget _buildErrorState() {
-    return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.red),
-            const SizedBox(height: 12),
-            Text(
-              'Initialization failed:\n$_errorMessage',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-                fontFamily: 'Inter',
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainContent() {
-    return Expanded(
-      child: Row(
-        children: [
-          Container(
-            width: AppSizes.sidebarWidth,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: const Border(
-                right: BorderSide(color: AppColors.border, width: 1),
-              ),
-            ),
-            child: _buildSidebar(),
-          ),
-          Expanded(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyS, control: true):
+            _openSettings,
+        const SingleActivator(LogicalKeyboardKey.slash, control: true):
+            _openHelp,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              HeaderBar(onSettings: _openSettings, onHelp: _openHelp),
+              if (_depWarning != null)
+                Container(
+                  width: double.infinity,
+                  color: Colors.amber.shade900.withValues(alpha: 0.35),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: UrlInput(
-                              controller: _urlController,
-                              onSubmit: _startDownload,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _buildDownloadButton(),
-                        ],
+                      const Icon(Icons.warning_amber_rounded),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _depWarning!,
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      ModeSelector(
-                        selectedMode: _mode,
-                        onModeChanged: (m) => setState(() => _mode = m),
-                      ),
-                      const SizedBox(height: 16),
-                      QualitySelector(
-                        selectedQuality: _quality,
-                        audioFormat: _audioFormat,
-                        isAudio: _mode == Mode.audio,
-                        onQualityChanged: (v) =>
-                            setState(() => _quality = v ?? 'best'),
-                        onAudioFormatChanged: (v) =>
-                            setState(() => _audioFormat = v ?? 'mp3'),
-                      ),
-                      const SizedBox(height: 16),
-                      OutputSelector(
-                        outputDir: _outputDir,
-                        onOutputDirChanged: (dir) {
-                          setState(() => _outputDir = dir);
-                          _settingsService.setOutputDir(dir);
+                      TextButton(
+                        onPressed: () async {
+                          setState(() => _checkingDeps = true);
+                          await _boot();
                         },
+                        child: const Text('Retry'),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() => _depWarning = null),
+                        child: const Text('Dismiss'),
                       ),
                     ],
                   ),
                 ),
-                Expanded(
-                  child: _buildDownloadList(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDownloadButton() {
-    final bool canDownload = _urlController.text.trim().isNotEmpty;
-    return MouseRegion(
-      cursor: canDownload
-          ? SystemMouseCursors.click
-          : SystemMouseCursors.forbidden,
-      child: GestureDetector(
-        onTap: canDownload ? _startDownload : null,
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: BoxDecoration(
-            color: canDownload ? AppColors.cyan : AppColors.border,
-            borderRadius: BorderRadius.circular(AppSizes.borderRadiusLg),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                _mode == Mode.video
-                    ? Icons.videocam_outlined
-                    : Icons.audio_file_outlined,
-                size: 14,
-                color: canDownload
-                    ? AppColors.background
-                    : AppColors.textMuted,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _mode == Mode.video
-                    ? AppStrings.downloadVideo
-                    : AppStrings.downloadAudio,
-                style: TextStyle(
-                  color: canDownload
-                      ? AppColors.background
-                      : AppColors.textMuted,
-                  fontSize: 12,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDownloadList() {
-    if (_downloadManager!.downloads.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.download_outlined,
-              size: 48,
-              color: AppColors.textMuted,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No downloads yet',
-              style: TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 13,
-                fontFamily: 'Inter',
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Enter a YouTube URL and click download to get started.',
-              style: TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 11,
-                fontFamily: 'Inter',
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: ListView.builder(
-        itemCount: _downloadManager!.downloads.length,
-        itemBuilder: (context, index) {
-          final item = _downloadManager!.downloads[index];
-          return DownloadListItem(
-            item: item,
-            onPause: () => _downloadManager!.pauseDownload(item),
-            onResume: () => _downloadManager!.resumeDownload(item),
-            onCancel: () => _downloadManager!.cancelDownload(item),
-            onRetry: () => _downloadManager!.startDownload(
-              url: item.url,
-              config: item.config ??
-                  _settingsService.buildConfig(
-                    mode: _mode,
-                    quality: _quality,
-                    audioFormat: _audioFormat,
-                    outputDir: _outputDir,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      UrlInput(
+                        controller: _urlController,
+                        onSubmit: _startDownload,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FormatSelector(
+                              mode: config.mode,
+                              onChanged: (m) async {
+                                dm.config = config.copyWith(mode: m);
+                                await widget.settings.saveConfig(dm.config);
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: QualitySelector(
+                              mode: config.mode,
+                              quality: config.quality,
+                              audioFormat: config.audioFormat,
+                              onQualityChanged: (q) async {
+                                dm.config = config.copyWith(quality: q);
+                                await widget.settings.saveConfig(dm.config);
+                                setState(() {});
+                              },
+                              onAudioFormatChanged: (f) async {
+                                dm.config = config.copyWith(audioFormat: f);
+                                await widget.settings.saveConfig(dm.config);
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: _checkingDeps ? null : _startDownload,
+                          icon: const Icon(Icons.download),
+                          label: Text(
+                            isAudio ? 'Download Audio' : 'Download Video',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutputSelector(
+                        path: config.outputDir,
+                        onChanged: (p) async {
+                          dm.config = config.copyWith(outputDir: p);
+                          await widget.settings.saveConfig(dm.config);
+                          setState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Text(
+                            'Download Queue',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const Spacer(),
+                          if (dm.queue.any(
+                            (e) =>
+                                e.status.name == 'completed' ||
+                                e.status.name == 'cancelled',
+                          ))
+                            TextButton(
+                              onPressed: dm.clearCompleted,
+                              child: const Text('Clear finished'),
+                            ),
+                        ],
+                      ),
+                      Text(
+                        'Recent Downloads',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: dm.queue.isEmpty
+                            ? const EmptyState()
+                            : ListView.builder(
+                                itemCount: dm.queue.length,
+                                itemBuilder: (context, index) {
+                                  final item = dm.queue[index];
+                                  return DownloadQueueItem(
+                                    index: index,
+                                    item: item,
+                                    onPause: () => dm.pause(item.id),
+                                    onResume: () => dm.resume(item.id),
+                                    onCancel: () => dm.cancel(item.id),
+                                    onOpenFolder: () =>
+                                        _openFolder(item.config.outputDir),
+                                    onRemove: () => dm.remove(item.id),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   ),
-            ),
-            onRemove: () => _downloadManager!.removeDownload(item),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSidebar() {
-    return Column(
-      children: [
-        Container(
-          height: 120,
-          padding: const EdgeInsets.all(20),
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.circle,
-                size: 32,
-                color: AppColors.cyan,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                AppStrings.appName,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 16,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            children: [
-              _buildNavItem(Icons.download_outlined, 'Downloads', true),
-              const SizedBox(height: 8),
-              _buildNavItem(Icons.settings_outlined, 'Settings', false,
-                  onTap: _openSettings),
-              const SizedBox(height: 8),
-              _buildNavItem(Icons.help_outline, 'Help', false,
-                  onTap: _openHelp),
-              const SizedBox(height: 8),
-              _buildNavItem(Icons.info_outline, 'About', false),
-            ],
-          ),
-        ),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.all(12),
-          alignment: Alignment.center,
-          child: Text(
-            'v0.1.0',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 11,
-              fontFamily: 'Inter',
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNavItem(
-    IconData icon,
-    String label,
-    bool selected, {
-    VoidCallback? onTap,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.cyan : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: selected
-                    ? AppColors.background
-                    : AppColors.textSecondary,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected
-                      ? AppColors.background
-                      : AppColors.textSecondary,
-                  fontSize: 12,
-                  fontFamily: 'Inter',
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ],
