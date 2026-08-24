@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Build a TubeRip AppImage (Flutter Linux + bundled yt-dlp + ffmpeg).
+# yt-dlp is always resolved from the GitHub Releases API at build time (never cached).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,14 +10,15 @@ ARCH="$(uname -m)"
 VERSION="${VERSION:-$(grep '^version:' "$ROOT/pubspec.yaml" | head -1 | awk '{print $2}' | cut -d+ -f1)}"
 APPDIR="$OUT_DIR/${APP_NAME}.AppDir"
 BUNDLE="$ROOT/build/linux/x64/release/bundle"
+YT_DLP_API="https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest"
 
 case "$ARCH" in
   x86_64|amd64)
-    YT_DLP_DEFAULT="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux"
+    YT_DLP_ASSET="yt-dlp_linux"
     FFMPEG_DEFAULT="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz"
     ;;
   aarch64|arm64)
-    YT_DLP_DEFAULT="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64"
+    YT_DLP_ASSET="yt-dlp_linux_aarch64"
     FFMPEG_DEFAULT="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linuxarm64-gpl.tar.xz"
     BUNDLE="$ROOT/build/linux/arm64/release/bundle"
     ;;
@@ -25,7 +27,6 @@ case "$ARCH" in
     exit 1
     ;;
 esac
-YT_DLP_URL="${YT_DLP_URL:-$YT_DLP_DEFAULT}"
 FFMPEG_URL="${FFMPEG_URL:-$FFMPEG_DEFAULT}"
 
 echo "==> TubeRip AppImage builder (v${VERSION}, ${ARCH})"
@@ -56,19 +57,119 @@ mv "$APPDIR/usr/bin/TubeRip/desktop" "$APPDIR/usr/bin/TubeRip/tuberip"
 HELPERS="$OUT_DIR/helpers"
 mkdir -p "$HELPERS"
 
-download() {
-  local url="$1" dest="$2"
-  if [[ -f "$dest" ]]; then
-    echo "  keep cached $(basename "$dest")"
-    return
+# ── yt-dlp: always fetch latest at build time (never reuse helpers cache) ──
+fetch_latest_ytdlp() {
+  local dest="$1"
+  local asset_name="$2"
+  local api_json tag url tmp dest_size bin_version
+
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "ERROR: python3 is required to resolve the latest yt-dlp release" >&2
+    exit 1
   fi
-  echo "  download $(basename "$dest")"
-  curl -fsSL -o "$dest" "$url"
+
+  echo "==> Resolving latest yt-dlp ($asset_name) via GitHub API"
+  local curl_args=(-fsSL -H "Accept: application/vnd.github+json")
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    curl_args+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+  fi
+
+  if ! api_json="$(curl "${curl_args[@]}" "$YT_DLP_API")"; then
+    echo "ERROR: failed to query yt-dlp releases API ($YT_DLP_API)" >&2
+    exit 1
+  fi
+
+  # Optional YT_DLP_URL override still resolves version from the API tag when possible.
+  if [[ -n "${YT_DLP_URL:-}" ]]; then
+    url="$YT_DLP_URL"
+    tag="$(printf '%s' "$api_json" | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+print((data.get("tag_name") or "").lstrip("v"))
+')"
+    echo "  using YT_DLP_URL override"
+  else
+    # tag\turl — fail loudly if asset missing
+    local resolved
+    if ! resolved="$(printf '%s' "$api_json" | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+tag = (data.get("tag_name") or "").lstrip("v")
+asset = "'"$asset_name"'"
+url = ""
+for a in data.get("assets") or []:
+    if a.get("name") == asset:
+        url = a.get("browser_download_url") or ""
+        break
+if not tag:
+    sys.stderr.write("ERROR: yt-dlp release has empty tag_name\n")
+    sys.exit(1)
+if not url:
+    sys.stderr.write(f"ERROR: yt-dlp release has no asset named {asset!r}\n")
+    sys.exit(1)
+print(f"{tag}\t{url}")
+')"; then
+      exit 1
+    fi
+    tag="${resolved%%$'\t'*}"
+    url="${resolved#*$'\t'}"
+  fi
+
+  if [[ -z "$url" ]]; then
+    echo "ERROR: empty yt-dlp download URL" >&2
+    exit 1
+  fi
+  if [[ -z "$tag" ]]; then
+    echo "ERROR: could not determine yt-dlp version tag" >&2
+    exit 1
+  fi
+
+  tmp="$(mktemp "$HELPERS/yt-dlp.XXXXXX")"
+  # shellcheck disable=SC2064
+  trap "rm -f '$tmp'" RETURN
+
+  echo "  download yt-dlp $tag"
+  if ! curl -fsSL -o "$tmp" "$url"; then
+    echo "ERROR: failed to download yt-dlp from $url" >&2
+    exit 1
+  fi
+
+  dest_size="$(wc -c < "$tmp" | tr -d ' ')"
+  if [[ -z "$dest_size" || "$dest_size" -eq 0 ]]; then
+    echo "ERROR: downloaded yt-dlp is empty" >&2
+    exit 1
+  fi
+
+  chmod +x "$tmp"
+  if ! bin_version="$("$tmp" --version 2>/dev/null | head -1 | tr -d '[:space:]' | sed 's/^v//')"; then
+    echo "ERROR: downloaded yt-dlp failed to run (--version)" >&2
+    exit 1
+  fi
+  if [[ -z "$bin_version" ]]; then
+    echo "ERROR: yt-dlp --version returned empty output" >&2
+    exit 1
+  fi
+  if [[ "$bin_version" != "$tag" ]]; then
+    echo "WARNING: API tag ($tag) != binary --version ($bin_version); using binary version" >&2
+    tag="$bin_version"
+  fi
+
+  rm -f "$dest"
+  mv "$tmp" "$dest"
+  trap - RETURN
+  chmod +x "$dest"
+
+  BUNDLED_YTDLP_VERSION="$tag"
+  echo "  Bundled yt-dlp: $BUNDLED_YTDLP_VERSION (${dest_size} bytes)"
 }
 
-download "$YT_DLP_URL" "$HELPERS/yt-dlp"
-chmod +x "$HELPERS/yt-dlp"
+fetch_latest_ytdlp "$HELPERS/yt-dlp" "$YT_DLP_ASSET"
 cp "$HELPERS/yt-dlp" "$APPDIR/usr/bin/yt-dlp"
+chmod +x "$APPDIR/usr/bin/yt-dlp"
+
+mkdir -p "$APPDIR/usr/share/tuberip"
+printf '%s\n' "$BUNDLED_YTDLP_VERSION" > "$APPDIR/usr/share/tuberip/BUNDLED_YTDLP_VERSION"
+printf '%s\n' "$BUNDLED_YTDLP_VERSION" > "$OUT_DIR/BUNDLED_YTDLP_VERSION"
 
 if [[ ! -f "$HELPERS/ffmpeg" ]]; then
   echo "  download ffmpeg static archive"
@@ -161,4 +262,5 @@ chmod +x "$OUT_FILE"
 
 echo ""
 echo "Done: $OUT_FILE"
+echo "Bundled yt-dlp: $BUNDLED_YTDLP_VERSION"
 echo "Run with: $OUT_FILE"

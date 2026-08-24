@@ -64,9 +64,10 @@ flutter build linux --release
 ```bash
 ./scripts/build-appimage.sh
 # Output: dist/TubeRip-<version>-x86_64.AppImage
+#         dist/BUNDLED_YTDLP_VERSION
 ```
 
-Requires `curl`. Downloads `appimagetool`, yt-dlp, and a static ffmpeg if missing.
+Requires `curl` and `python3`. Always fetches the latest yt-dlp via the GitHub Releases API at build time (never reuses a cached helpers copy). Set `GITHUB_TOKEN` if you hit API rate limits. Downloads `appimagetool` and a static ffmpeg when missing.
 
 ## Features (MVP)
 
