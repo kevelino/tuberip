@@ -33,6 +33,7 @@ jobs:
         working-directory: apps/desktop
         env:
           APPIMAGE_EXTRACT_AND_RUN: '1'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x scripts/build-appimage.sh
           ./scripts/build-appimage.sh
@@ -41,7 +42,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tuberip-flutter-appimage
-          path: apps/desktop/dist/TubeRip-*.AppImage
+          path: |
+            apps/desktop/dist/TubeRip-*.AppImage
+            apps/desktop/dist/BUNDLED_YTDLP_VERSION
           if-no-files-found: error
 
   create-release:
@@ -61,11 +64,19 @@ jobs:
           cp install.sh artifacts/install.sh
           chmod +x artifacts/install.sh
 
+      - name: Read bundled yt-dlp version
+        id: ytdlp
+        run: |
+          ver="$(tr -d '[:space:]' < artifacts/BUNDLED_YTDLP_VERSION)"
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "Bundled yt-dlp: $ver"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             artifacts/TubeRip-*.AppImage
+            artifacts/BUNDLED_YTDLP_VERSION
             artifacts/install.sh
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
@@ -85,5 +96,5 @@ jobs:
             ./TubeRip-*-x86_64.AppImage
             ```
 
-            yt-dlp and ffmpeg are bundled. Browser cookies still use your installed Firefox/Chrome profile.
+            yt-dlp and ffmpeg are bundled (yt-dlp **${{ steps.ytdlp.outputs.version }}** at build time). Browser cookies still use your installed Firefox/Chrome profile.
             Re-run `install.sh` anytime to update.
