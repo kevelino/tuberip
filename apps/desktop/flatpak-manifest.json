@@ -45,7 +45,7 @@
       "build-commands": [
         "cp -r bundle/* /app/",
         "install -Dm644 tuberip.desktop /app/share/applications/com.tuberip.TubeRip.desktop",
-        "install -Dm644 assets/icons/tuberip.svg /app/share/icons/hicolor/scalable/apps/tuberip.svg"
+        "install -Dm644 assets/icons/tuberip-3.svg /app/share/icons/hicolor/scalable/apps/tuberip.svg"
       ],
       "sources": [
         {

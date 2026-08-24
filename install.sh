@@ -11,7 +11,7 @@ INSTALL_DIR="${HOME}/.local/share/tuberip"
 APPIMAGE_DEST="${INSTALL_DIR}/TubeRip.AppImage"
 ICON_DEST="${HOME}/.local/share/icons/tuberip.svg"
 DESKTOP_DEST="${HOME}/.local/share/applications/tuberip.desktop"
-ICON_RAW_URL="https://raw.githubusercontent.com/${REPO}/main/apps/desktop/assets/icons/tuberip.svg"
+ICON_RAW_URL="https://raw.githubusercontent.com/${REPO}/main/apps/desktop/assets/icons/tuberip-3.svg"
 RELEASES_API="https://api.github.com/repos/${REPO}/releases/latest"
 USER_AGENT="TubeRip-install"
 
@@ -177,8 +177,8 @@ install_icon() {
 
   src=""
   for candidate in \
-    "apps/desktop/assets/icons/tuberip.svg" \
-    "apps/desktop/assets/tuberip.svg"
+    "apps/desktop/assets/icons/tuberip-3.svg" \
+    "apps/desktop/assets/tuberip-3.svg"
   do
     if [ -f "$candidate" ]; then
       src="$candidate"
@@ -190,8 +190,8 @@ install_icon() {
     sd=$(script_dir) || sd=""
     if [ -n "$sd" ]; then
       for candidate in \
-        "$sd/apps/desktop/assets/icons/tuberip.svg" \
-        "$sd/apps/desktop/assets/tuberip.svg"
+        "$sd/apps/desktop/assets/icons/tuberip-3.svg" \
+        "$sd/apps/desktop/assets/tuberip-3.svg"
       do
         if [ -f "$candidate" ]; then
           src="$candidate"
