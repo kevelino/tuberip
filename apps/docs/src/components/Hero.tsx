@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Download } from 'lucide-react';
 import { CommandBlock } from './CommandBlock';
@@ -51,81 +50,57 @@ const HERO_STARS: StarConfig[] = [
 
 function HeroStars() {
   const shouldReduceMotion = useReducedMotion();
-  const stars = useMemo(() => HERO_STARS, []);
 
   return (
     <div
       className="absolute inset-0 overflow-hidden pointer-events-none z-[1]"
       aria-hidden="true"
     >
-      {stars.map((star) => {
-        if (shouldReduceMotion) {
-          return (
-            <div
-              key={star.id}
-              className={`absolute ${
-                star.type === 'sparkle'
-                  ? star.colorClass
-                  : `rounded-full ${star.colorClass}`
-              }`}
-              style={{
-                top: star.top,
-                left: star.left,
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                opacity: 0.5,
-              }}
+      {HERO_STARS.map((star) => (
+        <motion.div
+          key={star.id}
+          className={`absolute ${
+            star.type === 'sparkle'
+              ? `${star.colorClass} ${star.glow ? 'drop-shadow-[0_0_8px_rgba(17,238,249,0.8)]' : ''}`
+              : `rounded-full ${star.colorClass} ${star.glow ? 'shadow-[0_0_10px_rgba(17,238,249,0.9),0_0_20px_rgba(17,238,249,0.4)]' : ''}`
+          }`}
+          style={{
+            top: star.top,
+            left: star.left,
+            width: `${star.size}px`,
+            height: `${star.size}px`,
+            opacity: shouldReduceMotion ? 0.5 : undefined,
+          }}
+          animate={
+            shouldReduceMotion
+              ? undefined
+              : {
+                  opacity: [0.35, 1, 0.35],
+                  scale: [0.8, 1.25, 0.8],
+                }
+          }
+          transition={
+            shouldReduceMotion
+              ? undefined
+              : {
+                  duration: star.duration,
+                  delay: star.delay,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }
+          }
+        >
+          {star.type === 'sparkle' && (
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-full h-full"
             >
-              {star.type === 'sparkle' && (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-full h-full"
-                >
-                  <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5Z" />
-                </svg>
-              )}
-            </div>
-          );
-        }
-
-        return (
-          <motion.div
-            key={star.id}
-            className={`absolute ${
-              star.type === 'sparkle'
-                ? `${star.colorClass} ${star.glow ? 'drop-shadow-[0_0_8px_rgba(17,238,249,0.8)]' : ''}`
-                : `rounded-full ${star.colorClass} ${star.glow ? 'shadow-[0_0_10px_rgba(17,238,249,0.9),0_0_20px_rgba(17,238,249,0.4)]' : ''}`
-            }`}
-            style={{
-              top: star.top,
-              left: star.left,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-            }}
-            animate={{
-              opacity: [0.35, 1, 0.35],
-              scale: [0.8, 1.25, 0.8],
-            }}
-            transition={{
-              duration: star.duration,
-              delay: star.delay,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            {star.type === 'sparkle' && (
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-full h-full"
-              >
-                <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5Z" />
-              </svg>
-            )}
-          </motion.div>
-        );
-      })}
+              <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5Z" />
+            </svg>
+          )}
+        </motion.div>
+      ))}
     </div>
   );
 }

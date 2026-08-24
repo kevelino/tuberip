@@ -19,6 +19,7 @@ class BinaryManager {
 
   String? ytDlpPath;
   String? ffmpegPath;
+  String? nodePath;
 
   /// True when [ytDlpPath] is the writable user-owned copy (auto-update target).
   bool ytDlpIsManaged = false;
@@ -32,6 +33,7 @@ class BinaryManager {
   Future<DependencyCheckResult> check() async {
     ytDlpPath = await _resolveYtDlp();
     ffmpegPath = await _resolveFromSearch('ffmpeg', customFfmpegPath);
+    nodePath = await _resolveNode();
 
     final missing = <String>[];
     if (ytDlpPath == null) missing.add('yt-dlp');
@@ -42,6 +44,7 @@ class BinaryManager {
       missing: missing,
       ytDlpPath: ytDlpPath,
       ffmpegPath: ffmpegPath,
+      nodePath: nodePath,
       ytDlpIsManaged: ytDlpIsManaged,
     );
   }
@@ -118,6 +121,26 @@ class BinaryManager {
     return _resolveFromPath(name);
   }
 
+  /// Node.js is required by yt-dlp's EJS/n-challenge solver (--remote-components).
+  Future<String?> _resolveNode() async {
+    final fromPath = await _resolveFromPath('node');
+    if (fromPath != null && fromPath != 'node') {
+      return fromPath;
+    }
+
+    const candidates = [
+      '/usr/bin/node',
+      '/usr/local/bin/node',
+      '/snap/bin/node',
+    ];
+    for (final candidate in candidates) {
+      if (await File(candidate).exists()) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
   Future<String?> _resolveFromPath(String name) async {
     if (!Platform.isWindows) {
       final which = await Process.run('which', [name]);
@@ -156,6 +179,7 @@ class DependencyCheckResult {
     required this.missing,
     this.ytDlpPath,
     this.ffmpegPath,
+    this.nodePath,
     this.ytDlpIsManaged = false,
   });
 
@@ -163,5 +187,6 @@ class DependencyCheckResult {
   final List<String> missing;
   final String? ytDlpPath;
   final String? ffmpegPath;
+  final String? nodePath;
   final bool ytDlpIsManaged;
 }

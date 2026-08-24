@@ -16,8 +16,8 @@ class DownloadManager extends ChangeNotifier {
     required this.binaryManager,
     YtDlpCommandBuilder? commandBuilder,
     ProgressParser? progressParser,
-  })  : _commands = commandBuilder ?? const YtDlpCommandBuilder(),
-        _parser = progressParser ?? const ProgressParser();
+  }) : _commands = commandBuilder ?? const YtDlpCommandBuilder(),
+       _parser = progressParser ?? const ProgressParser();
 
   final BinaryManager binaryManager;
   final YtDlpCommandBuilder _commands;
@@ -71,12 +71,14 @@ class DownloadManager extends ChangeNotifier {
   }
 
   Future<void> _enrichMetadata(DownloadItem item) async {
-    final yt = binaryManager.ytDlpPath ?? 'yt-dlp';
+    final deps = await checkDependencies();
+    final yt = deps.ytDlpPath ?? 'yt-dlp';
     final args = _commands.buildMetadataCommand(
       url: item.url,
       ytDlpExecutable: yt,
       cookieBrowser: item.config.cookieBrowser,
       cookiesFile: item.config.cookiesFile,
+      nodePath: deps.nodePath,
     );
     try {
       final result = await Process.run(
@@ -157,6 +159,7 @@ class DownloadManager extends ChangeNotifier {
       url: item.url,
       config: item.config,
       ytDlpExecutable: yt,
+      nodePath: deps.nodePath,
     );
 
     final errorLines = <String>[];
@@ -174,27 +177,29 @@ class DownloadManager extends ChangeNotifier {
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .listen((line) {
-        if (_parser.isErrorLine(line)) {
-          errorLines.add(line);
-        }
-        final percent = _parser.parsePercent(line);
-        if (percent != null) {
-          item.progress = percent.clamp(0, 100);
-          final info = _parser.parseSpeedInfo(line);
-          if (info.speed != null) item.speed = info.speed;
-          if (info.eta != null) item.eta = info.eta;
-          notifyListeners();
-        }
-      }).asFuture<void>();
+            if (_parser.isErrorLine(line)) {
+              errorLines.add(line);
+            }
+            final percent = _parser.parsePercent(line);
+            if (percent != null) {
+              item.progress = percent.clamp(0, 100);
+              final info = _parser.parseSpeedInfo(line);
+              if (info.speed != null) item.speed = info.speed;
+              if (info.eta != null) item.eta = info.eta;
+              notifyListeners();
+            }
+          })
+          .asFuture<void>();
 
       final stderrDone = _activeProcess!.stderr
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .listen((line) {
-        if (_parser.isErrorLine(line) || line.trim().isNotEmpty) {
-          if (_parser.isErrorLine(line)) errorLines.add(line);
-        }
-      }).asFuture<void>();
+            if (_parser.isErrorLine(line) || line.trim().isNotEmpty) {
+              if (_parser.isErrorLine(line)) errorLines.add(line);
+            }
+          })
+          .asFuture<void>();
 
       final code = await _activeProcess!.exitCode;
       await stdoutDone;

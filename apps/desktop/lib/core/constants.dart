@@ -1,8 +1,9 @@
 /// App-wide constants for TubeRip.
 abstract final class AppConstants {
   static const String appName = 'TubeRip';
-  static const String appVersion = '1.0.1';
+  static const String appVersion = '1.0.2';
   static const String logoAsset = 'assets/icons/tuberip.svg';
+  static const String logoTextAsset = 'assets/icons/tuberip-worldmark.svg';
 
   static const String defaultOutputSubdir = 'YouTube';
   static const String outputTemplate = '%(title)s [%(id)s].%(ext)s';

@@ -26,4 +26,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/icons/tuberip.svg
     - assets/icons/tuberip-3.svg
+    - assets/icons/tuberip-worldmark.svg

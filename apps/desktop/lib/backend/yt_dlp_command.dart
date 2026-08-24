@@ -28,10 +28,19 @@ class YtDlpCommandBuilder {
         'best[height<=$quality]';
   }
 
+  /// yt-dlp needs Node for the EJS/n-challenge solver when using remote components.
+  static List<String> jsRuntimeArgs(String? nodePath) {
+    if (nodePath != null && nodePath.isNotEmpty && nodePath != 'node') {
+      return ['--js-runtimes', 'node:$nodePath'];
+    }
+    return const ['--js-runtimes', 'node'];
+  }
+
   List<String> buildCommand({
     required String url,
     required DownloadConfig config,
     required String ytDlpExecutable,
+    String? nodePath,
   }) {
     final outputTemplate = p.join(
       config.outputDir,
@@ -42,6 +51,7 @@ class YtDlpCommandBuilder {
       ytDlpExecutable,
       '--remote-components',
       AppConstants.remoteComponents,
+      ...jsRuntimeArgs(nodePath),
       '-o',
       outputTemplate,
       '--retries',
@@ -113,9 +123,13 @@ class YtDlpCommandBuilder {
     required String ytDlpExecutable,
     String? cookieBrowser,
     String? cookiesFile,
+    String? nodePath,
   }) {
     final cmd = <String>[
       ytDlpExecutable,
+      '--remote-components',
+      AppConstants.remoteComponents,
+      ...jsRuntimeArgs(nodePath),
       '--dump-json',
       '--no-warnings',
       '--no-playlist',

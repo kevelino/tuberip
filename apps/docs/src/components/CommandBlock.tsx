@@ -32,8 +32,9 @@ export function CommandBlock({
       }
     } catch {
       // Fallback for browsers/contexts where Clipboard API is restricted or not supported
+      let success = false;
+      const textarea = document.createElement('textarea');
       try {
-        const textarea = document.createElement('textarea');
         textarea.value = command;
         textarea.setAttribute('readonly', '');
         textarea.style.position = 'fixed';
@@ -43,15 +44,18 @@ export function CommandBlock({
         document.body.appendChild(textarea);
         textarea.select();
         textarea.setSelectionRange(0, textarea.value.length);
-        const success = document.execCommand('copy');
-        document.body.removeChild(textarea);
-
-        if (success) {
-          setCopied(true);
-        } else {
-          throw new Error('execCommand copy failed');
-        }
+        success = document.execCommand('copy');
       } catch {
+        success = false;
+      } finally {
+        if (textarea.parentNode) {
+          document.body.removeChild(textarea);
+        }
+      }
+
+      if (success) {
+        setCopied(true);
+      } else {
         // Fallback failed: highlight/select text manually and alert error state
         setCopyFailed(true);
         if (commandTextRef.current && window.getSelection) {
@@ -77,6 +81,8 @@ export function CommandBlock({
       }
     };
   }, []);
+
+  const copyLabel = title ? `Copy ${title} command` : 'Copy command';
 
   return (
     <div
@@ -116,8 +122,8 @@ export function CommandBlock({
           <button
             type="button"
             onClick={handleCopy}
-            aria-label="Copy install command"
-            title={copied ? 'Copied!' : copyFailed ? 'Select and copy manually' : 'Copy'}
+            aria-label={copyLabel}
+            title={copied ? 'Copied!' : copyFailed ? 'Select and copy manually' : copyLabel}
             className={`flex items-center justify-center p-2 rounded-lg border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
               copied
                 ? 'bg-primary-500/10 border-primary-500/40 text-primary-400'

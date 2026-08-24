@@ -31,12 +31,24 @@ class ProgressParser {
       'This may be caused by an outdated yt-dlp version. TubeRip will try to '
       'update it automatically — you can also check manually in Settings.';
 
+  static const missingNodeHint =
+      'YouTube downloads require Node.js for yt-dlp\'s challenge solver. '
+      'Install Node (e.g. sudo dnf install nodejs) or ensure /usr/bin/node exists.';
+
   bool looksLikeOutdatedExtractor(String text) {
     final lower = text.toLowerCase();
     return lower.contains('needs to be reloaded') ||
         lower.contains('unable to extract') ||
         lower.contains('extraction failed') ||
         lower.contains('nsig extraction failed');
+  }
+
+  bool looksLikeMissingJsRuntime(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('n challenge solving failed') ||
+        lower.contains('javascript runtime') ||
+        (lower.contains('requested format is not available') &&
+            lower.contains('only images are available'));
   }
 
   String formatDownloadError({
@@ -48,6 +60,9 @@ class ProgressParser {
         : 'yt-dlp exited with code $exitCode';
     if (looksLikeOutdatedExtractor(raw)) {
       return '$raw\n$outdatedExtractorHint';
+    }
+    if (looksLikeMissingJsRuntime(raw)) {
+      return '$raw\n$missingNodeHint';
     }
     return raw;
   }
