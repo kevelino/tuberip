@@ -34,7 +34,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   late final TextEditingController _ytDlpPath;
   late final TextEditingController _ffmpegPath;
   String? _ytDlpVersion;
-  String? _updateStatus;
+  String? _playerClient;
   bool _checkingUpdate = false;
 
   @override
@@ -46,6 +46,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
     _cookiesFile = TextEditingController(text: _config.cookiesFile);
     _ytDlpPath = TextEditingController(text: _config.ytDlpPath);
     _ffmpegPath = TextEditingController(text: _config.ffmpegPath);
+    _playerClient = _config.playerClient;
     _loadYtDlpVersion();
   }
 
@@ -60,19 +61,13 @@ class _SettingsDialogState extends State<SettingsDialog> {
   Future<void> _checkYtDlpUpdates() async {
     final updater = widget.ytDlpUpdater;
     if (updater == null || _checkingUpdate) return;
-    setState(() {
-      _checkingUpdate = true;
-      _updateStatus = 'Checking…';
-    });
+    setState(() => _checkingUpdate = true);
     final result = await updater.checkAndUpdate(force: true);
     if (!mounted) return;
-    setState(() {
-      _checkingUpdate = false;
-      _updateStatus = result.message;
-      if (result.version != null) {
-        _ytDlpVersion = result.version;
-      }
-    });
+    setState(() => _checkingUpdate = false);
+    if (result.version != null) {
+      _ytDlpVersion = result.version;
+    }
   }
 
   String _ytDlpVersionLabel() {
@@ -145,6 +140,28 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 },
               ),
               SizedBox(height: tokens.spacingMd),
+              DropdownButtonFormField<String>(
+                initialValue: _playerClient,
+                decoration: const InputDecoration(
+                  labelText: 'YouTube player client',
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'web_embedded', child: Text('web_embedded')),
+                  DropdownMenuItem(value: 'default', child: Text('default')),
+                  DropdownMenuItem(value: 'android', child: Text('android')),
+                  DropdownMenuItem(value: 'ios', child: Text('ios')),
+                  DropdownMenuItem(value: 'tv', child: Text('tv')),
+                ],
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() {
+                      _config = _config.copyWith(playerClient: v);
+                      _playerClient = v;
+                    });
+                  }
+                },
+              ),
+              SizedBox(height: tokens.spacingMd),
               TextField(
                 decoration: const InputDecoration(
                   labelText: 'Cookies file (optional)',
@@ -174,11 +191,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
                   ),
                 ),
               ],
-              if (_updateStatus != null)
+              if (_checkingUpdate)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    _updateStatus!,
+                    'Checking…',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
