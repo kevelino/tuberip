@@ -18,6 +18,8 @@ class SettingsService {
   static const _kTheme = 'theme';
   static const _kEmbedThumb = 'embed_thumbnail';
   static const _kEmbedMeta = 'embed_metadata';
+  static const _kYtDlpLastCheckMs = 'yt_dlp_last_check_ms';
+  static const _kYtDlpInstalledVersion = 'yt_dlp_installed_version';
 
   SharedPreferences? _prefs;
 
@@ -76,5 +78,27 @@ class SettingsService {
   Future<void> saveThemeMode(String mode) async {
     final p = _prefs ?? await SharedPreferences.getInstance();
     await p.setString(_kTheme, mode);
+  }
+
+  Future<DateTime?> loadYtDlpLastCheck() async {
+    final p = _prefs ?? await SharedPreferences.getInstance();
+    final ms = p.getInt(_kYtDlpLastCheckMs);
+    if (ms == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> saveYtDlpLastCheck(DateTime time) async {
+    final p = _prefs ?? await SharedPreferences.getInstance();
+    await p.setInt(_kYtDlpLastCheckMs, time.millisecondsSinceEpoch);
+  }
+
+  Future<String?> loadYtDlpInstalledVersion() async {
+    final p = _prefs ?? await SharedPreferences.getInstance();
+    return p.getString(_kYtDlpInstalledVersion);
+  }
+
+  Future<void> saveYtDlpInstalledVersion(String version) async {
+    final p = _prefs ?? await SharedPreferences.getInstance();
+    await p.setString(_kYtDlpInstalledVersion, version);
   }
 }

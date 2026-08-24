@@ -1,6 +1,6 @@
 {
   "name": "tuberip-docs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Documentation website for TubeRip",
   "type": "module",
   "scripts": {

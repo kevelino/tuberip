@@ -5,14 +5,20 @@ Built with **Flutter**, **yt-dlp**, and **ffmpeg**.
 
 ## Download
 
-Grab the latest **AppImage** from [GitHub Releases](https://github.com/kevelino/tuberip/releases) (tags `v*`).
+**Recommended** — install the latest AppImage and add a menu entry (no sudo):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kevelino/tuberip/main/install.sh | sh
+```
+
+Or grab the **AppImage** from [GitHub Releases](https://github.com/kevelino/tuberip/releases) (tags `v*`) and run it manually:
 
 ```bash
 chmod +x TubeRip-*-x86_64.AppImage
 ./TubeRip-*-x86_64.AppImage
 ```
 
-yt-dlp and ffmpeg are bundled in the AppImage.
+yt-dlp and ffmpeg are bundled in the AppImage. Re-run `install.sh` anytime to update.
 
 ## Features
 
@@ -48,6 +54,7 @@ flutter run -d linux
 
 ```
 tuberip/
+├── install.sh             # Linux AppImage + desktop menu installer
 ├── apps/desktop/          # Flutter Linux desktop app (source of truth)
 │   ├── lib/               # UI, services, yt-dlp command builder
 │   ├── scripts/           # install-deps.sh, build-appimage.sh

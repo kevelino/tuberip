@@ -4,6 +4,7 @@ import '../../backend/models.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../services/settings_service.dart';
+import '../../services/yt_dlp_updater.dart';
 
 class SettingsDialog extends StatefulWidget {
   const SettingsDialog({
@@ -12,12 +13,14 @@ class SettingsDialog extends StatefulWidget {
     required this.themeMode,
     required this.settings,
     required this.onSaved,
+    this.ytDlpUpdater,
   });
 
   final DownloadConfig config;
   final String themeMode;
   final SettingsService settings;
   final void Function(DownloadConfig config, String themeMode) onSaved;
+  final YtDlpUpdater? ytDlpUpdater;
 
   @override
   State<SettingsDialog> createState() => _SettingsDialogState();
@@ -30,6 +33,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
   late final TextEditingController _cookiesFile;
   late final TextEditingController _ytDlpPath;
   late final TextEditingController _ffmpegPath;
+  String? _ytDlpVersion;
+  String? _updateStatus;
+  bool _checkingUpdate = false;
 
   @override
   void initState() {
@@ -40,6 +46,44 @@ class _SettingsDialogState extends State<SettingsDialog> {
     _cookiesFile = TextEditingController(text: _config.cookiesFile);
     _ytDlpPath = TextEditingController(text: _config.ytDlpPath);
     _ffmpegPath = TextEditingController(text: _config.ffmpegPath);
+    _loadYtDlpVersion();
+  }
+
+  Future<void> _loadYtDlpVersion() async {
+    final updater = widget.ytDlpUpdater;
+    if (updater == null) return;
+    final version = await updater.readLocalVersion();
+    if (!mounted) return;
+    setState(() => _ytDlpVersion = version);
+  }
+
+  Future<void> _checkYtDlpUpdates() async {
+    final updater = widget.ytDlpUpdater;
+    if (updater == null || _checkingUpdate) return;
+    setState(() {
+      _checkingUpdate = true;
+      _updateStatus = 'Checking…';
+    });
+    final result = await updater.checkAndUpdate(force: true);
+    if (!mounted) return;
+    setState(() {
+      _checkingUpdate = false;
+      _updateStatus = result.message;
+      if (result.version != null) {
+        _ytDlpVersion = result.version;
+      }
+    });
+  }
+
+  String _ytDlpVersionLabel() {
+    final custom = _config.ytDlpPath.trim().isNotEmpty;
+    if (custom) {
+      return 'Custom path — auto-update off';
+    }
+    if (_ytDlpVersion != null && _ytDlpVersion!.isNotEmpty) {
+      return 'Current version: $_ytDlpVersion';
+    }
+    return 'Current version: unknown';
   }
 
   @override
@@ -111,9 +155,39 @@ class _SettingsDialogState extends State<SettingsDialog> {
                     _config = _config.copyWith(cookiesFile: v),
               ),
               SizedBox(height: tokens.spacingMd),
+              Text(
+                'yt-dlp',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _ytDlpVersionLabel(),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (widget.ytDlpUpdater != null) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _checkingUpdate ? null : _checkYtDlpUpdates,
+                    child: const Text('Check for updates'),
+                  ),
+                ),
+              ],
+              if (_updateStatus != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _updateStatus!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              SizedBox(height: tokens.spacingMd),
               TextField(
                 decoration: const InputDecoration(
                   labelText: 'Custom yt-dlp path',
+                  helperText:
+                      'If set, TubeRip uses this binary and will not auto-update it',
                 ),
                 controller: _ytDlpPath,
                 onChanged: (v) =>

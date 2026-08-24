@@ -26,4 +26,29 @@ class ProgressParser {
   }
 
   bool isErrorLine(String line) => line.trimLeft().startsWith('ERROR:');
+
+  static const outdatedExtractorHint =
+      'This may be caused by an outdated yt-dlp version. TubeRip will try to '
+      'update it automatically — you can also check manually in Settings.';
+
+  bool looksLikeOutdatedExtractor(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('needs to be reloaded') ||
+        lower.contains('unable to extract') ||
+        lower.contains('extraction failed') ||
+        lower.contains('nsig extraction failed');
+  }
+
+  String formatDownloadError({
+    required List<String> errorLines,
+    required int exitCode,
+  }) {
+    final raw = errorLines.isNotEmpty
+        ? errorLines.join('\n')
+        : 'yt-dlp exited with code $exitCode';
+    if (looksLikeOutdatedExtractor(raw)) {
+      return '$raw\n$outdatedExtractorHint';
+    }
+    return raw;
+  }
 }

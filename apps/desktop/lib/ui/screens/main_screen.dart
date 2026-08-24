@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import '../../backend/models.dart';
 import '../../services/binary_manager.dart';
 import '../../services/download_manager.dart';
 import '../../services/settings_service.dart';
+import '../../services/yt_dlp_updater.dart';
 import '../dialogs/help_dialog.dart';
 import '../dialogs/settings_dialog.dart';
 import '../widgets/download_queue_item.dart';
@@ -23,12 +25,14 @@ class MainScreen extends StatefulWidget {
     required this.settings,
     required this.themeMode,
     required this.onThemeChanged,
+    this.ytDlpUpdater,
   });
 
   final DownloadManager downloadManager;
   final SettingsService settings;
   final String themeMode;
   final ValueChanged<String> onThemeChanged;
+  final YtDlpUpdater? ytDlpUpdater;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -58,6 +62,19 @@ class _MainScreenState extends State<MainScreen> {
             'Missing: ${result.missing.join(', ')}\n${BinaryManager.installHint(result.missing)}';
       }
     });
+    unawaited(_autoUpdateYtDlp());
+  }
+
+  Future<void> _autoUpdateYtDlp() async {
+    final updater = widget.ytDlpUpdater;
+    if (updater == null) return;
+    final result = await updater.checkAndUpdate();
+    if (!mounted) return;
+    if (result.kind == YtDlpUpdateKind.updated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
+    }
   }
 
   void _onDm() {
@@ -107,6 +124,7 @@ class _MainScreenState extends State<MainScreen> {
         config: dm.config,
         themeMode: widget.themeMode,
         settings: widget.settings,
+        ytDlpUpdater: widget.ytDlpUpdater,
         onSaved: (config, theme) {
           dm.config = config;
           widget.onThemeChanged(theme);
