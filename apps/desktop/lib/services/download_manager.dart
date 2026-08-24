@@ -32,6 +32,9 @@ class DownloadManager extends ChangeNotifier {
   bool _processing = false;
   DependencyCheckResult? lastDependencyCheck;
 
+  bool get hasActiveDownload =>
+      _processing || _activeProcess != null || _activeItemId != null;
+
   DownloadItem? get activeItem {
     if (_activeItemId == null) return null;
     try {
@@ -209,9 +212,10 @@ class DownloadManager extends ChangeNotifier {
         item.eta = null;
       } else {
         item.status = DownloadStatus.error;
-        item.error = errorLines.isNotEmpty
-            ? errorLines.join('\n')
-            : 'yt-dlp exited with code $code';
+        item.error = _parser.formatDownloadError(
+          errorLines: errorLines,
+          exitCode: code,
+        );
       }
     } on ProcessException catch (e) {
       item.status = DownloadStatus.error;

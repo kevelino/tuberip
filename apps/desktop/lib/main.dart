@@ -4,6 +4,7 @@ import 'app.dart';
 import 'services/binary_manager.dart';
 import 'services/download_manager.dart';
 import 'services/settings_service.dart';
+import 'services/yt_dlp_updater.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,11 +19,17 @@ Future<void> main() async {
   );
   final downloadManager = DownloadManager(binaryManager: binaryManager)
     ..config = config;
+  final ytDlpUpdater = YtDlpUpdater(
+    binaryManager: binaryManager,
+    downloadManager: downloadManager,
+    settings: settings,
+  );
 
   runApp(
     TubeRipApp(
       settings: settings,
       downloadManager: downloadManager,
+      ytDlpUpdater: ytDlpUpdater,
     ),
   );
 }

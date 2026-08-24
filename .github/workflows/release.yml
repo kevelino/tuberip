@@ -49,21 +49,36 @@ jobs:
     needs: [build-flutter-appimage]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: tuberip-flutter-appimage
           path: artifacts/
 
+      - name: Stage install.sh
+        run: |
+          cp install.sh artifacts/install.sh
+          chmod +x artifacts/install.sh
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/TubeRip-*.AppImage
+          files: |
+            artifacts/TubeRip-*.AppImage
+            artifacts/install.sh
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           body: |
             ## TubeRip ${{ github.ref_name }}
 
-            Download the **AppImage**, make it executable, and run:
+            **Install** (AppImage + application menu, no sudo):
+
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/kevelino/tuberip/main/install.sh | sh
+            ```
+
+            Or download the **AppImage** and run it manually:
 
             ```bash
             chmod +x TubeRip-*-x86_64.AppImage
@@ -71,3 +86,4 @@ jobs:
             ```
 
             yt-dlp and ffmpeg are bundled. Browser cookies still use your installed Firefox/Chrome profile.
+            Re-run `install.sh` anytime to update.

@@ -5,6 +5,7 @@ import 'core/theme.dart';
 import 'services/binary_manager.dart';
 import 'services/download_manager.dart';
 import 'services/settings_service.dart';
+import 'services/yt_dlp_updater.dart';
 import 'ui/screens/main_screen.dart';
 
 class TubeRipApp extends StatefulWidget {
@@ -12,10 +13,12 @@ class TubeRipApp extends StatefulWidget {
     super.key,
     required this.settings,
     required this.downloadManager,
+    this.ytDlpUpdater,
   });
 
   final SettingsService settings;
   final DownloadManager downloadManager;
+  final YtDlpUpdater? ytDlpUpdater;
 
   @override
   State<TubeRipApp> createState() => _TubeRipAppState();
@@ -53,6 +56,7 @@ class _TubeRipAppState extends State<TubeRipApp> {
         downloadManager: widget.downloadManager,
         settings: widget.settings,
         themeMode: _themePreference,
+        ytDlpUpdater: widget.ytDlpUpdater,
         onThemeChanged: (mode) {
           setState(() => _themePreference = mode);
         },
@@ -71,5 +75,14 @@ Future<TubeRipApp> createApp() async {
     customFfmpegPath: config.ffmpegPath,
   );
   final dm = DownloadManager(binaryManager: binaryManager)..config = config;
-  return TubeRipApp(settings: settings, downloadManager: dm);
+  final updater = YtDlpUpdater(
+    binaryManager: binaryManager,
+    downloadManager: dm,
+    settings: settings,
+  );
+  return TubeRipApp(
+    settings: settings,
+    downloadManager: dm,
+    ytDlpUpdater: updater,
+  );
 }

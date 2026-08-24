@@ -4,7 +4,13 @@ Linux-first YouTube downloader powered by **yt-dlp** and **ffmpeg**.
 
 ## Download
 
-Grab the latest **AppImage** from [GitHub Releases](https://github.com/kevelino/tuberip/releases) (tag `v*`).
+**Recommended** — install + desktop menu entry (no sudo):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kevelino/tuberip/main/install.sh | sh
+```
+
+See the root [`install.sh`](../../install.sh) and [README](../../README.md). Or grab the **AppImage** from [GitHub Releases](https://github.com/kevelino/tuberip/releases) (tag `v*`) and run it manually:
 
 ```bash
 chmod +x TubeRip-*-x86_64.AppImage
