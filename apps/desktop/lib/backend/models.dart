@@ -20,6 +20,7 @@ class DownloadConfig {
     this.cookiesFile = '',
     this.ytDlpPath = '',
     this.ffmpegPath = '',
+    this.playerClient = 'web_embedded',
     String? outputDir,
   }) : outputDir = outputDir ??
             p.join(
@@ -42,6 +43,7 @@ class DownloadConfig {
   String ytDlpPath;
   String ffmpegPath;
   String outputDir;
+  String playerClient = 'web_embedded';
 
   DownloadConfig copyWith({
     DownloadMode? mode,
@@ -56,6 +58,7 @@ class DownloadConfig {
     String? cookiesFile,
     String? ytDlpPath,
     String? ffmpegPath,
+    String? playerClient,
     String? outputDir,
   }) {
     return DownloadConfig(
@@ -71,6 +74,7 @@ class DownloadConfig {
       cookiesFile: cookiesFile ?? this.cookiesFile,
       ytDlpPath: ytDlpPath ?? this.ytDlpPath,
       ffmpegPath: ffmpegPath ?? this.ffmpegPath,
+      playerClient: playerClient ?? this.playerClient,
       outputDir: outputDir ?? this.outputDir,
     );
   }

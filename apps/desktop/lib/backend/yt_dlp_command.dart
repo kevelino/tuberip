@@ -55,6 +55,10 @@ class YtDlpCommandBuilder {
       '--newline',
     ];
 
+    if (config.playerClient.isNotEmpty) {
+      cmd.addAll(['--extractor-args', 'youtube:player_client=${config.playerClient}']);
+    }
+
     if (config.cookiesFile.isNotEmpty) {
       cmd.addAll(['--cookies', config.cookiesFile]);
     } else if (config.cookieBrowser.isNotEmpty) {
