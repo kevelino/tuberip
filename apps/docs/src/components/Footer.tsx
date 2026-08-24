@@ -1,4 +1,3 @@
-import { Github, MessageSquare } from 'lucide-react';
 
 export function Footer() {
   return (

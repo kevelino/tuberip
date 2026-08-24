@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MessageSquare, Github, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export function Community() {
   return (
