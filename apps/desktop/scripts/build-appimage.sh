@@ -86,8 +86,8 @@ cp "$HELPERS/ffmpeg" "$APPDIR/usr/bin/ffmpeg"
 chmod +x "$APPDIR/usr/bin/ffmpeg"
 
 # Desktop + icon
-cp "$ROOT/assets/icons/tuberip.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps/tuberip.svg"
-cp "$ROOT/assets/icons/tuberip.svg" "$APPDIR/tuberip.svg"
+cp "$ROOT/assets/icons/tuberip-3.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps/tuberip.svg"
+cp "$ROOT/assets/icons/tuberip-3.svg" "$APPDIR/tuberip.svg"
 
 cat > "$APPDIR/tuberip.desktop" <<EOF
 [Desktop Entry]
