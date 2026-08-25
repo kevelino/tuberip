@@ -123,7 +123,17 @@ class YtDlpUpdater {
     final path = binaryManager.ytDlpPath;
     if (path == null || path.isEmpty) return null;
     try {
-      final result = await Process.run(path, ['--version']);
+      final result = await Process.run(
+        path,
+        ['--version'],
+        environment: Platform.isWindows
+            ? {
+                ...Platform.environment,
+                'PYTHONIOENCODING': 'utf-8',
+                'PYTHONUTF8': '1',
+              }
+            : null,
+      );
       final text = '${result.stdout}\n${result.stderr}';
       final version = YtDlpVersion.normalize(text);
       return version.isEmpty ? null : version;
