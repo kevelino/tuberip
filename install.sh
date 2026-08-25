@@ -59,10 +59,20 @@ require_downloader() {
 download() {
   url="$1"
   dest="$2"
+  show_progress="${3:-0}"
+
   if have_cmd curl; then
-    curl -fsSL -A "$USER_AGENT" -o "$dest" "$url"
+    if [ "$show_progress" = "1" ]; then
+      curl -fL --progress-bar -A "$USER_AGENT" -o "$dest" "$url"
+    else
+      curl -fsSL -A "$USER_AGENT" -o "$dest" "$url"
+    fi
   elif have_cmd wget; then
-    wget -q -U "$USER_AGENT" -O "$dest" "$url"
+    if [ "$show_progress" = "1" ]; then
+      wget  --progress=bar:force -U "$USER_AGENT" -O "$dest" "$url" 2>&1
+    else
+      wget -q -U "$USER_AGENT" -O "$dest" "$url"
+    fi
   else
     return 2
   fi
@@ -144,7 +154,7 @@ fetch_latest_appimage() {
 
   info "Downloading AppImage…"
   TMP_APP=$(mktemp) || die "download" "cannot create temp file"
-  if ! download "$url" "$TMP_APP"; then
+  if ! download "$url" "$TMP_APP" 1; then
     die "download" "failed to download AppImage from $url"
   fi
 

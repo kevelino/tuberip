@@ -147,6 +147,10 @@ class _MainScreenState extends State<MainScreen> {
       await launchUrl(uri);
     } else if (Platform.isLinux) {
       await Process.run('xdg-open', [path]);
+    } else if (Platform.isWindows) {
+      await Process.run('explorer.exe', [path]);
+    } else if (Platform.isMacOS) {
+      await Process.run('open', [path]);
     }
   }
 
