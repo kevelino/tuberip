@@ -12,11 +12,11 @@ export function Showcase() {
             APPLICATION <span className="text-primary-400">GUI</span>
           </h2>
           <p className="text-zinc-400 max-w-xl mx-auto font-sans">
-            A beautiful, clean desktop interface designed to match modern Linux styling. Lightweight, fast, and simple.
+            A beautiful, clean desktop interface. Lightweight, fast, and simple.
           </p>
         </div>
 
-        {/* Linux-style Window Mockup */}
+        {/* App Window Mockup */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}

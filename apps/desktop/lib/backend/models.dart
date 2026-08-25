@@ -24,7 +24,8 @@ class DownloadConfig {
     String? outputDir,
   }) : outputDir = outputDir ??
             p.join(
-              Platform.environment['HOME'] ??
+              Platform.environment['USERPROFILE'] ??
+                  Platform.environment['HOME'] ??
                   Directory.systemTemp.path,
               'Downloads',
               'YouTube',

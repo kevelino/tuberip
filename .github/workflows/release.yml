@@ -47,20 +47,60 @@ jobs:
             apps/desktop/dist/BUNDLED_YTDLP_VERSION
           if-no-files-found: error
 
+  build-flutter-windows:
+    name: Flutter Windows (Inno Setup)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Build Windows Installer
+        working-directory: apps/desktop
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          .\scripts\build-windows.ps1
+
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tuberip-flutter-windows
+          path: |
+            apps/desktop/dist/TubeRip-Setup-*.exe
+            apps/desktop/dist/BUNDLED_YTDLP_VERSION
+          if-no-files-found: error
+
   create-release:
     name: Create Release
-    needs: [build-flutter-appimage]
+    needs: [build-flutter-appimage, build-flutter-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@v4
         with:
           name: tuberip-flutter-appimage
-          path: artifacts/
+          path: artifacts-linux/
 
-      - name: Stage install.sh
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tuberip-flutter-windows
+          path: artifacts-windows/
+
+      - name: Stage release artifacts
         run: |
+          mkdir -p artifacts
+          cp artifacts-linux/TubeRip-*.AppImage artifacts/
+          cp artifacts-linux/BUNDLED_YTDLP_VERSION artifacts/
+          cp artifacts-windows/TubeRip-Setup-*.exe artifacts/
           cp install.sh artifacts/install.sh
           chmod +x artifacts/install.sh
 
@@ -76,6 +116,7 @@ jobs:
         with:
           files: |
             artifacts/TubeRip-*.AppImage
+            artifacts/TubeRip-Setup-*.exe
             artifacts/BUNDLED_YTDLP_VERSION
             artifacts/install.sh
           tag_name: ${{ github.ref_name }}
@@ -83,6 +124,10 @@ jobs:
           body: |
             ## TubeRip ${{ github.ref_name }}
 
+            ### Windows
+            Download **`TubeRip-Setup-x64.exe`** and run the installer. No administrator rights required.
+
+            ### Linux
             **Install** (AppImage + application menu, no sudo):
 
             ```bash
@@ -96,5 +141,6 @@ jobs:
             ./TubeRip-*-x86_64.AppImage
             ```
 
-            yt-dlp and ffmpeg are bundled (yt-dlp **${{ steps.ytdlp.outputs.version }}** at build time). Browser cookies still use your installed Firefox/Chrome profile.
-            Re-run `install.sh` anytime to update.
+            ---
+            yt-dlp and ffmpeg are bundled (yt-dlp **${{ steps.ytdlp.outputs.version }}** at build time). Browser cookies still use your installed browser profile (Firefox, Chrome, Edge, etc.).
+            Re-run `install.sh` anytime on Linux to update.

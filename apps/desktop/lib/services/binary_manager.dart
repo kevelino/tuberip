@@ -100,6 +100,8 @@ class BinaryManager {
     final exe = Platform.resolvedExecutable;
     final exeDir = p.dirname(exe);
     dirs.add(exeDir);
+    dirs.add(p.join(exeDir, 'data'));
+    dirs.add(p.join(exeDir, 'bin'));
     // Flutter bundle: …/usr/bin/TubeRip/desktop → also check …/usr/bin
     dirs.add(p.dirname(exeDir));
     final appDir = Platform.environment['APPDIR'];
@@ -115,16 +117,41 @@ class BinaryManager {
       if (await file.exists()) return custom;
     }
 
-    final sidecar = await _findSidecar(name);
+    final exeName =
+        Platform.isWindows && !name.toLowerCase().endsWith('.exe')
+            ? '$name.exe'
+            : name;
+
+    final sidecar = await _findSidecar(exeName) ?? await _findSidecar(name);
     if (sidecar != null) return sidecar;
 
-    return _resolveFromPath(name);
+    return _resolveFromPath(exeName);
   }
 
   /// Node.js is required by yt-dlp's EJS/n-challenge solver (--remote-components).
   Future<String?> _resolveNode() async {
-    final fromPath = await _resolveFromPath('node');
-    if (fromPath != null && fromPath != 'node') {
+    final nodeName = Platform.isWindows ? 'node.exe' : 'node';
+    final fromPath =
+        await _resolveFromPath(nodeName) ?? await _resolveFromPath('node');
+    if (fromPath != null && fromPath != nodeName && fromPath != 'node') {
+      return fromPath;
+    }
+
+    if (Platform.isWindows) {
+      final programFiles =
+          Platform.environment['ProgramFiles'] ?? r'C:\Program Files';
+      final programFilesX86 =
+          Platform.environment['ProgramFiles(x86)'] ??
+          r'C:\Program Files (x86)';
+      final candidates = [
+        p.join(programFiles, 'nodejs', 'node.exe'),
+        p.join(programFilesX86, 'nodejs', 'node.exe'),
+      ];
+      for (final candidate in candidates) {
+        if (await File(candidate).exists()) {
+          return candidate;
+        }
+      }
       return fromPath;
     }
 
@@ -138,11 +165,25 @@ class BinaryManager {
         return candidate;
       }
     }
-    return null;
+    return fromPath;
   }
 
   Future<String?> _resolveFromPath(String name) async {
-    if (!Platform.isWindows) {
+    if (Platform.isWindows) {
+      try {
+        final where = await Process.run('where.exe', [name]);
+        if (where.exitCode == 0) {
+          final path =
+              where.stdout
+                  .toString()
+                  .trim()
+                  .split(RegExp(r'[\r\n]+'))
+                  .first
+                  .trim();
+          if (path.isNotEmpty && await File(path).exists()) return path;
+        }
+      } catch (_) {}
+    } else {
       final which = await Process.run('which', [name]);
       if (which.exitCode == 0) {
         final path = which.stdout.toString().trim().split('\n').first;
@@ -160,9 +201,21 @@ class BinaryManager {
     return null;
   }
 
-  /// Short install hints for common Linux distros.
+  /// Short install hints for common Linux and Windows distros.
   static String installHint(List<String> missing) {
     final parts = <String>[];
+    if (Platform.isWindows) {
+      if (missing.contains('ffmpeg')) {
+        parts.add(
+          'ffmpeg: winget install Gyan.FFmpeg  # or choco install ffmpeg',
+        );
+      }
+      if (missing.contains('yt-dlp')) {
+        parts.add('yt-dlp: winget install yt-dlp  # or pip install yt-dlp');
+      }
+      return parts.join('\n');
+    }
+
     if (missing.contains('ffmpeg')) {
       parts.add('ffmpeg: sudo dnf install ffmpeg  # or apt install ffmpeg');
     }

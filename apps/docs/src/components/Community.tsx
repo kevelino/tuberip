@@ -23,7 +23,7 @@ export function Community() {
             JOIN THE COMMUNITY
           </h2>
           <p className="text-zinc-400 mb-8 max-w-md mx-auto">
-            Need help? Want to suggest features or share feedback? Come hang out on our Discord server with fellow Linux users.
+            Need help? Want to suggest features or share feedback? Come hang out on our Discord server with fellow TubeRip users.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Check, Monitor, Package, Clock } from 'lucide-react';
 
-const RELEASES_URL = 'https://github.com/kevelino/tuberip/releases';
+const RELEASES_URL = 'https://github.com/kevelino/tuberip/releases/latest';
 
 const options = [
   {
@@ -16,15 +16,25 @@ const options = [
     available: true,
   },
   {
-    id: 'flatpak',
-    label: 'Flatpak',
-    title: 'Flatpak Package',
+    id: 'windows',
+    label: 'Windows',
+    title: 'Windows Installer',
     description:
-      'Flathub packaging is planned for later. Cookie and filesystem sandboxing need more work before a public Flatpak.',
+      'Download TubeRip-Setup-x64.exe from GitHub Releases and run it. No administrator rights required — installs per-user by default.',
     icon: Monitor,
-    highlight: 'Coming soon',
-    available: false,
+    highlight: 'New',
+    available: true,
   },
+  // {
+  //   id: 'flatpak',
+  //   label: 'Flatpak',
+  //   title: 'Flatpak Package',
+  //   description:
+  //     'Flathub packaging is planned for later. Cookie and filesystem sandboxing need more work before a public Flatpak.',
+  //   icon: Monitor,
+  //   highlight: 'Coming soon',
+  //   available: false,
+  // },
 ];
 
 export function Installation() {
@@ -88,7 +98,7 @@ export function Installation() {
               <span>{active.highlight}</span>
             </div>
 
-            {active.available ? (
+            {active.id === 'appimage' ? (
               <div className="space-y-4">
                 <a
                   href={RELEASES_URL}
@@ -100,9 +110,36 @@ export function Installation() {
                   <span>GitHub Releases</span>
                 </a>
                 <pre className="text-left text-xs font-mono text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-lg p-4 max-w-md mx-auto overflow-x-auto">
-{`chmod +x TubeRip-*-x86_64.AppImage
+{`# One-line install (AppImage + desktop menu, no sudo):
+curl -fsSL https://raw.githubusercontent.com/kevelino/tuberip/main/install.sh | sh
+
+# Or run the AppImage directly:
+chmod +x TubeRip-*-x86_64.AppImage
 ./TubeRip-*-x86_64.AppImage`}
                 </pre>
+              </div>
+            ) : active.id === 'windows' ? (
+              <div className="space-y-4">
+                <a
+                  href={RELEASES_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-500 text-white font-bold font-mono text-sm py-3 px-6 rounded-lg transition"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download TubeRip-Setup-x64.exe</span>
+                </a>
+                <ol className="text-left text-xs font-mono text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-lg p-4 max-w-md mx-auto space-y-1 list-none">
+                  <li><span className="text-primary-400 mr-2">1.</span>Download <strong>TubeRip-Setup-x64.exe</strong> from GitHub Releases.</li>
+                  <li><span className="text-primary-400 mr-2">2.</span>Run the installer — no administrator rights needed.</li>
+                  <li><span className="text-primary-400 mr-2">3.</span>Launch TubeRip from the Start Menu.</li>
+                </ol>
+                {/* SmartScreen note */}
+                <div className="max-w-md mx-auto bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 text-left">
+                  <p className="text-amber-300 text-xs font-mono leading-relaxed">
+                    <strong>SmartScreen notice:</strong> Windows may show an "Unknown publisher" warning because the installer is not yet code-signed. Click <em>"More info → Run anyway"</em> to proceed — this is expected and safe for this release.
+                  </p>
+                </div>
               </div>
             ) : (
               <p className="text-zinc-500 text-sm font-mono">
@@ -116,17 +153,17 @@ export function Installation() {
           <div className="bg-zinc-950/50 rounded-xl border border-zinc-800 p-6">
             <Monitor className="w-6 h-6 text-primary-400 mx-auto mb-3" />
             <h4 className="font-mono font-bold text-white text-sm mb-1">Linux</h4>
-            <p className="text-zinc-500 text-xs">x86_64 (ARM64 build script ready)</p>
+            <p className="text-zinc-500 text-xs">AppImage · x86_64</p>
           </div>
           <div className="bg-zinc-950/50 rounded-xl border border-zinc-800 p-6">
-            <Download className="w-6 h-6 text-primary-400 mx-auto mb-3" />
-            <h4 className="font-mono font-bold text-white text-sm mb-1">AppImage</h4>
-            <p className="text-zinc-500 text-xs">yt-dlp + ffmpeg bundled</p>
+            <Monitor className="w-6 h-6 text-primary-400 mx-auto mb-3" />
+            <h4 className="font-mono font-bold text-white text-sm mb-1">Windows</h4>
+            <p className="text-zinc-500 text-xs">Inno Setup installer · x64</p>
           </div>
           <div className="bg-zinc-950/50 rounded-xl border border-zinc-800 p-6">
             <Check className="w-6 h-6 text-primary-400 mx-auto mb-3" />
-            <h4 className="font-mono font-bold text-white text-sm mb-1">Ready</h4>
-            <p className="text-zinc-500 text-xs">No system install required</p>
+            <h4 className="font-mono font-bold text-white text-sm mb-1">Bundled</h4>
+            <p className="text-zinc-500 text-xs">yt-dlp + ffmpeg included</p>
           </div>
         </div>
       </div>

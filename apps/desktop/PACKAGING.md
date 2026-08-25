@@ -32,9 +32,16 @@ TubeRip.AppDir/
 - Runtime permissions for cookies + downloads remain the main friction.
 - Starter ideas: [`flatpak-manifest.json`](flatpak-manifest.json)
 
-## Windows (later)
+## Windows (Inno Setup)
 
-See [WINDOWS.md](WINDOWS.md).
+```powershell
+cd apps/desktop
+.\scripts\build-windows.ps1
+# → dist/TubeRip-Setup-x64.exe
+# → dist/BUNDLED_YTDLP_VERSION
+```
+
+CI publishes the Inno Setup installer on tags `v*` (see `.github/workflows/release.yml`). See [WINDOWS.md](WINDOWS.md).
 
 ## Icon conversion
 

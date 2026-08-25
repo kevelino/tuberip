@@ -1,13 +1,26 @@
-# Windows port notes (post-MVP)
+# Windows Distribution & Build
 
-TubeRip’s Flutter UI and yt-dlp command builder are largely cross-platform.
-Enabling Windows later requires:
+TubeRip supports Windows x64 packaged via Inno Setup.
 
-1. `flutter create --platforms=windows .` if the `windows/` runner is missing.
-2. Ship or document install of `yt-dlp.exe` and `ffmpeg.exe`.
-3. Wire `BinaryManager` to look under `%LOCALAPPDATA%/TubeRip/bin` as well as PATH.
-4. **Pause**: `ProcessSignal.sigstop` is unavailable — keep pause buttons hidden
-   (`Platform.isLinux || Platform.isMacOS` already gates the UI) or implement cancel+retry.
-5. Prefer `chrome` / `edge` for `--cookies-from-browser`.
+## Building the Windows Installer
 
-No Windows runner is required for the Linux MVP.
+From PowerShell (on Windows):
+
+```powershell
+cd apps/desktop
+.\scripts\build-windows.ps1
+# Output: dist/TubeRip-Setup-x64.exe
+#         dist/BUNDLED_YTDLP_VERSION
+```
+
+### Build Requirements
+- Flutter SDK (with Windows desktop enabled)
+- Visual Studio with C++ desktop workload
+- Inno Setup 6 (`ISCC.exe` in PATH or standard Program Files location)
+- Internet connection (to fetch latest `yt-dlp.exe` and `ffmpeg.exe` at build time)
+
+### Packaging Details
+- Built with `PrivilegesRequired=lowest` for per-user installation without requiring administrator rights.
+- Bundles `TubeRip.exe`, all required Flutter runtime DLLs, `yt-dlp.exe`, and `ffmpeg.exe`.
+- BinaryManager resolves bundled binaries next to the executable and supports auto-updates to `%LOCALAPPDATA%\TubeRip\bin`.
+

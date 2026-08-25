@@ -159,15 +159,21 @@ export function Hero() {
           variants={itemVariants}
           className="text-base sm:text-md md:text-md text-zinc-400 font-sans max-w-2xl mx-auto mb-10 leading-relaxed"
         >
-          Download YouTube videos or extract audio with a clean, intuitive desktop application. Fast, private, and fully customizable.
+          Download YouTube videos or extract audio with a clean, intuitive desktop app — on <span className="text-zinc-200 font-medium">Linux</span> and <span className="text-zinc-200 font-medium">Windows</span>. Fast, private, and fully customizable.
         </motion.p>
 
-        {/* Install command mockup */}
-        <motion.div variants={itemVariants} className="w-full mb-10">
+        {/* Install command mockup (Linux quick-install) */}
+        <motion.div variants={itemVariants} className="w-full mb-3">
           <CommandBlock
             command="curl -fsSL https://raw.githubusercontent.com/kevelino/tuberip/main/install.sh | sh"
           />
         </motion.div>
+        <motion.p
+          variants={itemVariants}
+          className="text-xs text-zinc-600 font-mono mb-8"
+        >
+          Linux one-liner · Windows installer available below ↓
+        </motion.p>
 
         {/* CTA */}
         <motion.div
