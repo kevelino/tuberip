@@ -177,15 +177,16 @@ ThemeData buildTubeRipTheme({required Brightness brightness}) {
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.cyan,
-        foregroundColor: AppColors.gray1000,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: const StadiumBorder(side: BorderSide.none),
-      ).copyWith(
-        mouseCursor: const WidgetStatePropertyAll(SystemMouseCursors.click),
-      ),
+      style:
+          ElevatedButton.styleFrom(
+            backgroundColor: AppColors.cyan,
+            foregroundColor: AppColors.gray1000,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: const StadiumBorder(side: BorderSide.none),
+          ).copyWith(
+            mouseCursor: const WidgetStatePropertyAll(SystemMouseCursors.click),
+          ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: const ButtonStyle(

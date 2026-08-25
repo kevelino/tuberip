@@ -59,7 +59,26 @@ void main() {
       expect(cmd, contains('--merge-output-format'));
       expect(cmd, contains('mp4'));
       expect(cmd, contains('--remote-components'));
+      expect(cmd, contains('--js-runtimes'));
       expect(cmd.last, 'https://www.youtube.com/watch?v=abc');
+    });
+
+    test('buildCommand passes explicit node path', () {
+      final cmd = builder.buildCommand(
+        url: 'https://www.youtube.com/watch?v=abc',
+        config: DownloadConfig(outputDir: '/tmp/out'),
+        ytDlpExecutable: 'yt-dlp',
+        nodePath: '/usr/bin/node',
+      );
+      expect(cmd, contains('--js-runtimes'));
+      expect(cmd, contains('node:/usr/bin/node'));
+    });
+
+    test('jsRuntimeArgs uses explicit path when provided', () {
+      expect(
+        YtDlpCommandBuilder.jsRuntimeArgs('/usr/bin/node'),
+        ['--js-runtimes', 'node:/usr/bin/node'],
+      );
     });
 
     test('buildCommand audio uses -x', () {
@@ -120,6 +139,20 @@ void main() {
     test('detects error lines', () {
       expect(parser.isErrorLine('ERROR: Video unavailable'), isTrue);
       expect(parser.isErrorLine('[download] 100%'), isFalse);
+    });
+    test('detects missing js runtime errors', () {
+      expect(
+        parser.looksLikeMissingJsRuntime(
+          'ERROR: Requested format is not available',
+        ),
+        isFalse,
+      );
+      expect(
+        parser.looksLikeMissingJsRuntime(
+          'n challenge solving failed\nOnly images are available',
+        ),
+        isTrue,
+      );
     });
   });
 }

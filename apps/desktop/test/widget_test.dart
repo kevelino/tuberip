@@ -3,6 +3,7 @@ import 'package:desktop/services/binary_manager.dart';
 import 'package:desktop/services/download_manager.dart';
 import 'package:desktop/services/settings_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,7 +28,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('TubeRip'), findsOneWidget);
+    expect(find.byType(SvgPicture), findsWidgets);
     expect(find.textContaining('Download'), findsWidgets);
     expect(find.text('No downloads yet'), findsOneWidget);
   });

@@ -210,9 +210,7 @@ cat > "$APPDIR/AppRun" <<'EOF'
 set -e
 HERE="$(dirname "$(readlink -f "$0")")"
 export APPDIR="${APPDIR:-$HERE}"
-export PATH="$HERE/usr/bin:$PATH"
-# Prefer bundled helpers for yt-dlp / ffmpeg
-export PATH="$HERE/usr/bin:$PATH"
+export PATH="$HERE/usr/bin:/usr/local/bin:/usr/bin:$PATH"
 cd "$HERE/usr/bin/TubeRip"
 exec "$HERE/usr/bin/TubeRip/tuberip" "$@"
 EOF

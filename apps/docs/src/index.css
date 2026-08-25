@@ -3,7 +3,7 @@
 @theme {
   --font-sans: "Inter", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-  --font-serif: "Sentient", Georgia, serif;
+  --font-serif: "Sentient", georgia, serif;
   
   --color-primary-50: #ecfeff;
   --color-primary-100: #cffafe;
@@ -18,8 +18,10 @@
   --color-primary-950: #083344;
 }
 
-html {
-  scroll-behavior: smooth;
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 

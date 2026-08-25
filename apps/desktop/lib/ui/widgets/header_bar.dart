@@ -5,11 +5,7 @@ import '../../core/constants.dart';
 import '../../core/theme.dart';
 
 class HeaderBar extends StatelessWidget {
-  const HeaderBar({
-    super.key,
-    required this.onSettings,
-    required this.onHelp,
-  });
+  const HeaderBar({super.key, required this.onSettings, required this.onHelp});
 
   final VoidCallback onSettings;
   final VoidCallback onHelp;
@@ -25,19 +21,9 @@ class HeaderBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          SvgPicture.asset(
-            AppConstants.logoAsset,
-            width: 32,
-            height: 32,
-          ),
+          SvgPicture.asset(AppConstants.logoAsset, width: 32, height: 32),
           SizedBox(width: tokens.spacingSm),
-          Text(
-            AppConstants.appName,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-          ),
+          SvgPicture.asset(AppConstants.logoTextAsset, width: 120, height: 32),
           const Spacer(),
           IconButton(
             tooltip: 'Settings',
