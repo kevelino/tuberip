@@ -1,7 +1,7 @@
 name: desktop
-description: TubeRip — YouTube downloader for Linux desktop.
+description: TubeRip — download YouTube videos and audio.
 publish_to: 'none'
-version: 1.0.3
+version: 1.0.3+1
 
 environment:
   sdk: ^3.13.0
