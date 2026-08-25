@@ -84,8 +84,15 @@ class DownloadManager extends ChangeNotifier {
       final result = await Process.run(
         args.first,
         args.sublist(1),
-        stdoutEncoding: utf8,
-        stderrEncoding: utf8,
+        stdoutEncoding: const Utf8Codec(allowMalformed: true),
+        stderrEncoding: const Utf8Codec(allowMalformed: true),
+        environment: Platform.isWindows
+            ? {
+                ...Platform.environment,
+                'PYTHONIOENCODING': 'utf-8',
+                'PYTHONUTF8': '1',
+              }
+            : null,
       ).timeout(const Duration(seconds: 45));
       if (result.exitCode != 0) return;
       final line = result.stdout.toString().trim().split('\n').first;
@@ -171,10 +178,17 @@ class DownloadManager extends ChangeNotifier {
         args.first,
         args.sublist(1),
         runInShell: false,
+        environment: Platform.isWindows
+            ? {
+                ...Platform.environment,
+                'PYTHONIOENCODING': 'utf-8',
+                'PYTHONUTF8': '1',
+              }
+            : null,
       );
 
       final stdoutDone = _activeProcess!.stdout
-          .transform(utf8.decoder)
+          .transform(const Utf8Decoder(allowMalformed: true))
           .transform(const LineSplitter())
           .listen((line) {
             if (_parser.isErrorLine(line)) {
@@ -192,7 +206,7 @@ class DownloadManager extends ChangeNotifier {
           .asFuture<void>();
 
       final stderrDone = _activeProcess!.stderr
-          .transform(utf8.decoder)
+          .transform(const Utf8Decoder(allowMalformed: true))
           .transform(const LineSplitter())
           .listen((line) {
             if (_parser.isErrorLine(line) || line.trim().isNotEmpty) {
