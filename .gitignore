@@ -8,6 +8,7 @@ build/
 *.egg-info/
 .env
 .venv/
+.kilo/
 venv/
 .DS_Store
 Thumbs.db
