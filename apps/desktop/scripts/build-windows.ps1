@@ -113,9 +113,52 @@ if (-not (Test-Path $ffmpegDest)) {
 
 Copy-Item $ffmpegDest "$BundleDir\ffmpeg.exe" -Force
 
+# ── Deno: fetch portable Windows build for JS runtime ────────────────
+# Deno is used by yt-dlp as a JS runtime for YouTube challenge solving.
+# We bundle it so users don't need to install anything separately.
+# Deno changes infrequently; pinning a tested version is safer than "latest".
+Write-Host "==> Resolving Deno (deno.exe) via GitHub API"
+$denoDest = "$HelpersDir\deno.exe"
+if (-not (Test-Path $denoDest)) {
+    # Pin to a specific stable Deno version for reproducibility.
+    # Update this version when explicitly testing a newer Deno release.
+    $denoVersion = "2.2.4"
+    $denoAssetName = "deno-x86_64-pc-windows-msvc.zip"
+    $denoUrl = "https://github.com/denoland/deno/releases/download/v$denoVersion/$denoAssetName"
+    Write-Host "  Downloading Deno v$denoVersion from $denoUrl"
+    $denoZip = "$HelpersDir\deno.zip"
+    Invoke-WebRequest -Uri $denoUrl -OutFile $denoZip
+
+    Write-Host "  Extracting deno.exe"
+    Expand-Archive -Path $denoZip -DestinationPath "$HelpersDir\deno_extracted" -Force
+    $extractedDeno = Get-ChildItem -Path "$HelpersDir\deno_extracted" -Filter "deno.exe" -Recurse | Select-Object -First 1
+    if (-not $extractedDeno) {
+        Write-Error "deno.exe not found in archive"
+        exit 1
+    }
+    Copy-Item $extractedDeno.FullName $denoDest -Force
+    Remove-Item -Recurse -Force "$HelpersDir\deno_extracted", $denoZip -ErrorAction SilentlyContinue
+
+    # Verify binary works
+    $denoVerOutput = & $denoDest --version 2>$null
+    if ($denoVerOutput) {
+        $BundledDenoVersion = ($denoVerOutput -split "`r?`n")[0].Trim() -replace '^deno ', ''
+    } else {
+        $BundledDenoVersion = $denoVersion
+    }
+    Write-Host "  Bundled Deno: $BundledDenoVersion"
+} else {
+    $denoVerOutput = & $denoDest --version 2>$null
+    $BundledDenoVersion = if ($denoVerOutput) { ($denoVerOutput -split "`r?`n")[0].Trim() -replace '^deno ', '' } else { "unknown" }
+    Write-Host "  Using cached Deno: $BundledDenoVersion"
+}
+Copy-Item $denoDest "$BundleDir\deno.exe" -Force
+Set-Content -Path "$OutDir\BUNDLED_DENO_VERSION" -Value $BundledDenoVersion -NoNewline
+
 # ── Inno Setup installer packaging ─────────────────────────────────
 Write-Host "==> Compiling Inno Setup installer"
-$isccPath = (Get-Command "ISCC.exe" -ErrorAction SilentlyContinue)?.Source
+$isccCmd = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
+$isccPath = if ($isccCmd) { $isccCmd.Source }
 if (-not $isccPath) {
     $possiblePaths = @(
         "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",

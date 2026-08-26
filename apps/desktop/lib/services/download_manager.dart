@@ -79,6 +79,7 @@ class DownloadManager extends ChangeNotifier {
       cookieBrowser: item.config.cookieBrowser,
       cookiesFile: item.config.cookiesFile,
       nodePath: deps.nodePath,
+      denoPath: deps.denoPath,
     );
     try {
       final result = await Process.run(
@@ -167,6 +168,7 @@ class DownloadManager extends ChangeNotifier {
       config: item.config,
       ytDlpExecutable: yt,
       nodePath: deps.nodePath,
+      denoPath: deps.denoPath,
     );
 
     final errorLines = <String>[];

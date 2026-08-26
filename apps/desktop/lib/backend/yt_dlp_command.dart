@@ -28,12 +28,18 @@ class YtDlpCommandBuilder {
         'best[height<=$quality]';
   }
 
-  /// yt-dlp needs Node for the EJS/n-challenge solver when using remote components.
-  static List<String> jsRuntimeArgs(String? nodePath) {
-    if (nodePath != null && nodePath.isNotEmpty && nodePath != 'node') {
-      return ['--js-runtimes', 'node:$nodePath'];
+  /// yt-dlp needs a JS runtime for the EJS/n-challenge solver when using remote components.
+  /// On Windows, we prefer the bundled Deno. On Linux, Node.js is typically available.
+  static List<String> jsRuntimeArgs({String? nodePath, String? denoPath}) {
+    final args = <String>[];
+    if (denoPath != null && denoPath.isNotEmpty) {
+      args.addAll(['--js-runtimes', 'deno:$denoPath']);
+    } else if (nodePath != null && nodePath.isNotEmpty && nodePath != 'node') {
+      args.addAll(['--js-runtimes', 'node:$nodePath']);
+    } else {
+      args.addAll(const ['--js-runtimes', 'node']);
     }
-    return const ['--js-runtimes', 'node'];
+    return args;
   }
 
   List<String> buildCommand({
@@ -41,6 +47,7 @@ class YtDlpCommandBuilder {
     required DownloadConfig config,
     required String ytDlpExecutable,
     String? nodePath,
+    String? denoPath,
   }) {
     final outputTemplate = p.join(
       config.outputDir,
@@ -51,7 +58,7 @@ class YtDlpCommandBuilder {
       ytDlpExecutable,
       '--remote-components',
       AppConstants.remoteComponents,
-      ...jsRuntimeArgs(nodePath),
+      ...jsRuntimeArgs(nodePath: nodePath, denoPath: denoPath),
       '-o',
       outputTemplate,
       '--retries',
@@ -124,12 +131,13 @@ class YtDlpCommandBuilder {
     String? cookieBrowser,
     String? cookiesFile,
     String? nodePath,
+    String? denoPath,
   }) {
     final cmd = <String>[
       ytDlpExecutable,
       '--remote-components',
       AppConstants.remoteComponents,
-      ...jsRuntimeArgs(nodePath),
+      ...jsRuntimeArgs(nodePath: nodePath, denoPath: denoPath),
       '--dump-json',
       '--no-warnings',
       '--no-playlist',

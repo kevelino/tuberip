@@ -4,11 +4,12 @@ import 'package:path/path.dart' as p;
 
 import 'yt_dlp_paths.dart';
 
-/// Locates yt-dlp and ffmpeg on the system (or custom / bundled paths).
+/// Locates yt-dlp, ffmpeg, and deno on the system (or custom / bundled paths).
 class BinaryManager {
   BinaryManager({
     this.customYtDlpPath = '',
     this.customFfmpegPath = '',
+    this.customDenoPath = '',
     String? managedYtDlpPath,
     List<String>? sidecarDirs,
   }) : _managedYtDlpPathOverride = managedYtDlpPath,
@@ -16,10 +17,12 @@ class BinaryManager {
 
   String customYtDlpPath;
   String customFfmpegPath;
+  String customDenoPath;
 
   String? ytDlpPath;
   String? ffmpegPath;
   String? nodePath;
+  String? denoPath;
 
   /// True when [ytDlpPath] is the writable user-owned copy (auto-update target).
   bool ytDlpIsManaged = false;
@@ -34,6 +37,7 @@ class BinaryManager {
     ytDlpPath = await _resolveYtDlp();
     ffmpegPath = await _resolveFromSearch('ffmpeg', customFfmpegPath);
     nodePath = await _resolveNode();
+    denoPath = await _resolveDeno();
 
     final missing = <String>[];
     if (ytDlpPath == null) missing.add('yt-dlp');
@@ -45,6 +49,7 @@ class BinaryManager {
       ytDlpPath: ytDlpPath,
       ffmpegPath: ffmpegPath,
       nodePath: nodePath,
+      denoPath: denoPath,
       ytDlpIsManaged: ytDlpIsManaged,
     );
   }
@@ -168,6 +173,28 @@ class BinaryManager {
     return fromPath;
   }
 
+  /// Deno is used as a JS runtime for yt-dlp's challenge solver on Windows.
+  /// On Linux, Node.js is typically available and preferred.
+  Future<String?> _resolveDeno() async {
+    if (customDenoPath.isNotEmpty) {
+      final file = File(customDenoPath);
+      if (await file.exists()) return customDenoPath;
+    }
+
+    final exeName = Platform.isWindows ? 'deno.exe' : 'deno';
+    final sidecar = await _findSidecar(exeName);
+    if (sidecar != null) return sidecar;
+
+    if (Platform.isWindows) {
+      // On Windows, prefer bundled deno.exe; don't search system PATH
+      // (users won't have it installed). Return null if not bundled.
+      return null;
+    }
+
+    // On Linux, try system-installed deno as fallback
+    return _resolveFromPath(exeName);
+  }
+
   Future<String?> _resolveFromPath(String name) async {
     if (Platform.isWindows) {
       try {
@@ -233,6 +260,7 @@ class DependencyCheckResult {
     this.ytDlpPath,
     this.ffmpegPath,
     this.nodePath,
+    this.denoPath,
     this.ytDlpIsManaged = false,
   });
 
@@ -241,5 +269,6 @@ class DependencyCheckResult {
   final String? ytDlpPath;
   final String? ffmpegPath;
   final String? nodePath;
+  final String? denoPath;
   final bool ytDlpIsManaged;
 }
