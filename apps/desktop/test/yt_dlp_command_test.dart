@@ -74,10 +74,35 @@ void main() {
       expect(cmd, contains('node:/usr/bin/node'));
     });
 
-    test('jsRuntimeArgs uses explicit path when provided', () {
+    test('buildCommand passes explicit deno path', () {
+      final cmd = builder.buildCommand(
+        url: 'https://www.youtube.com/watch?v=abc',
+        config: DownloadConfig(outputDir: '/tmp/out'),
+        ytDlpExecutable: 'yt-dlp',
+        denoPath: '/usr/bin/deno',
+      );
+      expect(cmd, contains('--js-runtimes'));
+      expect(cmd, contains('deno:/usr/bin/deno'));
+    });
+
+    test('jsRuntimeArgs uses explicit node path when provided', () {
       expect(
-        YtDlpCommandBuilder.jsRuntimeArgs('/usr/bin/node'),
+        YtDlpCommandBuilder.jsRuntimeArgs(nodePath: '/usr/bin/node'),
         ['--js-runtimes', 'node:/usr/bin/node'],
+      );
+    });
+
+    test('jsRuntimeArgs uses explicit deno path when provided', () {
+      expect(
+        YtDlpCommandBuilder.jsRuntimeArgs(denoPath: '/usr/bin/deno'),
+        ['--js-runtimes', 'deno:/usr/bin/deno'],
+      );
+    });
+
+    test('jsRuntimeArgs prefers deno over node when both provided', () {
+      expect(
+        YtDlpCommandBuilder.jsRuntimeArgs(nodePath: '/usr/bin/node', denoPath: '/usr/bin/deno'),
+        ['--js-runtimes', 'deno:/usr/bin/deno'],
       );
     });
 
